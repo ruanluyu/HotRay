@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HotRay.Base.Ray
+namespace HotRay.Base.Ray.Lite
 {
     public class SignalRay : RayBase
     {

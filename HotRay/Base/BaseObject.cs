@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HotRay.Base.Nodes.Components.Containers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,15 +9,46 @@ namespace HotRay.Base
 {
     public class BaseObject
     {
-        static ulong _UIDCounter = 1;
+        public BaseObject? Parent { set; get; }
 
-        public ulong UID { get; }
+        public struct UIDType
+        {
+            static ulong counter = 1;
+            ulong uid;
+            public static UIDType Create()
+            {
+                return new UIDType() { uid = unchecked(counter++) };
+            }
+
+            public static bool operator ==(UIDType l, UIDType r) => l.Equals(r);
+            public static bool operator !=(UIDType l, UIDType r) => !l.Equals(r);
+
+            public override bool Equals(object? obj)
+            {
+                if (obj is UIDType u) return uid == u.uid;
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                return uid.GetHashCode();
+            }
+
+            public override string ToString()
+            {
+                return uid.ToString();
+            }
+        }
+
+        
+
+        public UIDType UID { get; }
 
         public virtual string Name { get; set; }
 
         public BaseObject()
         {
-            UID = _UIDCounter++;
+            UID = UIDType.Create();
             Name = "";
         }
 
@@ -24,7 +56,13 @@ namespace HotRay.Base
             :this()
         {
             Name = other.Name;
+            Parent = other.Parent;
         }
 
+
+        public override string ToString()
+        {
+            return $"{Name}<uid: {UID}>";
+        }
     }
 }

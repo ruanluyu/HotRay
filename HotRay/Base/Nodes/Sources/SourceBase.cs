@@ -21,25 +21,12 @@ namespace HotRay.Base.Nodes.Sources
         }
 
 
-        public abstract IPort[] OutputPorts
+
+        public override sealed IPort[] InputPorts
         {
-            get;
+            get => sharedEmptyPorts;
         }
 
-        public override void Init()
-        {
-            InitOutputPorts();
-        }
-
-        public virtual void InitOutputPorts()
-        {
-            var p = OutputPorts;
-            if (p == null) return;
-            for (int i = 0; i < p.Length; i++)
-            {
-                p[i].Ray = null;
-            }
-        }
 
 
     }

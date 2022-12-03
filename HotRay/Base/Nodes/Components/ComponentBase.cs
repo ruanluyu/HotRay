@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes.Components
 {
-    public abstract class ComponentBase : SourceBase
+    public abstract class ComponentBase : NodeBase
     {
         public ComponentBase() : base()
         {
@@ -20,27 +20,9 @@ namespace HotRay.Base.Nodes.Components
 
         }
 
+        public override IPort[] InputPorts => sharedEmptyPorts;
 
-        public abstract IPort[] InputPorts
-        {
-            get;
-        }
-
-        public override void Init()
-        {
-            base.Init();
-            InitInputPorts();
-        }
-
-        public virtual void InitInputPorts()
-        {
-            var p = InputPorts;
-            if (p == null) return;
-            for (int i = 0; i < p.Length; i++)
-            {
-                p[i].Ray = null;
-            }
-        }
+        public override IPort[] OutputPorts => sharedEmptyPorts;
 
     }
 }

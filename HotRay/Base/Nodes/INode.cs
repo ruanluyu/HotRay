@@ -23,7 +23,15 @@ namespace HotRay.Base.Nodes
         /// <returns>The routine</returns>
         public IEnumerator<Status> GetRoutine();
 
+        public IPort[] InputPorts
+        {
+            get;
+        }
         
+        public IPort[] OutputPorts
+        {
+            get;
+        }
 
     }
 }

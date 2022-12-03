@@ -14,21 +14,23 @@ namespace HotRay.Base.Nodes.Components
     {
         public OneOneComponent() : base()
         {
-
+            inPort0 = CreatePort<inRayT>();
+            outPort0 = CreatePort<outRayT>();
         }
 
         public OneOneComponent(OneOneComponent<inRayT, outRayT> other) : base(other)
         {
-
+            inPort0 = CreatePort<inRayT>(other.inPort0);
+            outPort0 = CreatePort<outRayT>(other.outPort0);
         }
 
 
-        protected readonly Port<inRayT> inPort0 = new Port<inRayT>();
-        protected readonly Port<outRayT> outPort0 = new Port<outRayT>();
+        protected readonly Port<inRayT> inPort0;
+        protected readonly Port<outRayT> outPort0;
 
 
-        public override IPort[] OutputPorts => new IPort[] { outPort0 };
         public override IPort[] InputPorts => new IPort[] { inPort0 };
+        public override IPort[] OutputPorts => new IPort[] { outPort0 };
 
 
     }

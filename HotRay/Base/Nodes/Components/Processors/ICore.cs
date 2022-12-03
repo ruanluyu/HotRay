@@ -11,5 +11,7 @@ namespace HotRay.Base.Nodes.Components.Processors
     public interface ICore
     {
         public void Process();
+
+        public void CopyFrom(ICore other);
     }
 }

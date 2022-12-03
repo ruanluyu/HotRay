@@ -20,7 +20,7 @@ namespace HotRay.Base.Nodes.Components.Processors
 
         protected coreT core;
 
-        public ProcessorBase()
+        public ProcessorBase():base()
         {
             var t = typeof(coreT);
 
@@ -30,7 +30,7 @@ namespace HotRay.Base.Nodes.Components.Processors
                 .Where(p =>
                 {
                     var a = p.GetCustomAttribute<InPortAttribute>();
-                    return a != null && a.connectable && p.PropertyType.IsSubclassOf(typeof(RayBase));
+                    return a != null && p.PropertyType.IsSubclassOf(typeof(RayBase));
                 })
                 .OrderBy(p => p.GetCustomAttribute<InPortAttribute>()!.index)
                 .ToArray();
@@ -53,6 +53,21 @@ namespace HotRay.Base.Nodes.Components.Processors
             if (inports.Length <= 0) throw new ArgumentException($"{typeof(coreT)} does not contain connectable inports. ");
 
             core = new coreT();
+
+            foreach (var p in inports.OfType<BaseObject>())
+            {
+                p.Parent = this;
+            }
+            
+            foreach (var p in outports.OfType<BaseObject>())
+            {
+                p.Parent = this;
+            }
+        }
+
+        public ProcessorBase(ProcessorBase<coreT> processor):this()
+        {
+            core.CopyFrom(processor.core);
         }
 
         private void _SendInPortRays()

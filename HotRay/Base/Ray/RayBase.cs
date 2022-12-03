@@ -13,11 +13,19 @@ namespace HotRay.Base.Ray
     }
 
 
-    public abstract class RayBase<dataT> : RayBase
+    public class RayBase<dataT> : RayBase
+        where dataT: notnull
     {
         public virtual dataT Data
         {
             get; set;
         }
+
+        public override object Clone()
+        {
+            return new RayBase<dataT>() { Data = Data };
+        }
     }
+
+    
 }

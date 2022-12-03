@@ -10,13 +10,11 @@ namespace HotRay.Base.Port
     public class InPortAttribute : Attribute
     {
         public int index;
-        public bool connectable;
         public string? portName;
         public string? portDescription;
-        public InPortAttribute(int index, bool connectable = true, string? portName = null, string? portDescription = null)
+        public InPortAttribute(int index, string? portName = null, string? portDescription = null)
         {
             this.index = index;
-            this.connectable = connectable;
             this.portName = portName;
             this.portDescription = portDescription;
         }

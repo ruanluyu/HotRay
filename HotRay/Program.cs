@@ -1,6 +1,6 @@
 ﻿using HotRay.Base.Nodes.Components.Processors;
 using HotRay.Base.Port;
-using HotRay.Base.Ray;
+using HotRay.Base.Ray.Lite;
 
 namespace HotRay
 {
@@ -12,11 +12,13 @@ namespace HotRay
         IntRay b { get; set; }
 
         [OutPort(0)]
-        IntRay o { get; set; }
+        FloatRay o { get; set; }
+
+        public object Clone() => new AdderCore();
 
         public void Process()
         {
-            o = new IntRay() { Data = a.Data + b.Data };
+            o = new FloatRay() { Data = a.Data + b.Data };
         }
     }
 
@@ -35,7 +37,10 @@ namespace HotRay
             {
                 if (r.Current == Base.Nodes.Status.Shutdown) throw new Exception();
             }
-            Console.WriteLine((adder.OutputPorts[0].Ray as IntRay)!.Data);
+            Console.WriteLine((adder.OutputPorts[0].Ray as FloatRay)!.Data);
+            Console.WriteLine(adder.InputPorts[0].ConnectableTo(adder.InputPorts[1]));
+            Console.WriteLine(adder.OutputPorts[0].ConnectableTo(adder.InputPorts[1]));
+            Console.WriteLine(adder.InputPorts[1].ConnectableTo(adder.OutputPorts[0]));
         }
     }
 }
