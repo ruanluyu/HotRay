@@ -6,12 +6,16 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray
 {
-    public class StringRay : RayBase<string>
+    public class StringRay : RayBase<string?>
     {
+        public StringRay() : base() { }
+        public StringRay(StringRay other) : base(other) { Data = other.Data; }
 
-        public override object Clone()
+        public override string? Data { set; get; }
+
+        public override IRay RayClone()
         {
-            return new StringRay() { Data = Data };
+            return new StringRay(this);
         }
 
     }

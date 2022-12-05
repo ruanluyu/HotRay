@@ -11,7 +11,7 @@ namespace HotRay.Base.Nodes
     public interface INode
     {
 
-        public void Init();
+        void Init();
 
         
 
@@ -21,17 +21,19 @@ namespace HotRay.Base.Nodes
         /// yield break or quit: deactivates node, will be activated again when any of the in-ports recieved data. <para />
         /// </summary>
         /// <returns>The routine</returns>
-        public IEnumerator<Status> GetRoutine();
+        IEnumerator<Status> GetRoutine();
 
-        public IPort[] InputPorts
+        IPort[] InputPorts
         {
             get;
         }
         
-        public IPort[] OutputPorts
+        IPort[] OutputPorts
         {
             get;
         }
+
+
 
     }
 }

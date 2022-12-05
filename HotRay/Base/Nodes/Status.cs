@@ -26,5 +26,31 @@ namespace HotRay.Base.Nodes
 
         public static bool operator ==(Status lhs, Status rhs) => lhs.Equals(rhs);
         public static bool operator !=(Status lhs, Status rhs) => !lhs.Equals(rhs);
+
+        public override int GetHashCode()
+        {
+            if(HasResult)
+            {
+                if(Finished)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+            else
+            {
+                if (Finished)
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 3;
+                }
+            }
+        }
     }
 }

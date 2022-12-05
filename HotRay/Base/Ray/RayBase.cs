@@ -8,23 +8,27 @@ namespace HotRay.Base.Ray
 {
     public abstract class RayBase : IRay
     {
+        public RayBase(): base() { }
 
-        public abstract object Clone();
+        public RayBase(RayBase other): this() { }
+
+
+        public abstract IRay RayClone();
     }
 
 
-    public class RayBase<dataT> : RayBase
-        where dataT: notnull
+    public abstract class RayBase<dataT> : RayBase
     {
-        public virtual dataT Data
+        public abstract dataT Data
         {
             get; set;
         }
 
-        public override object Clone()
-        {
-            return new RayBase<dataT>() { Data = Data };
-        }
+        public RayBase() : base() { }
+
+        public RayBase(RayBase<dataT> other) : base(other) { }
+
+
     }
 
     

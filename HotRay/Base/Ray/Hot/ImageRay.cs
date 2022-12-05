@@ -16,13 +16,16 @@ namespace HotRay.Base.Ray.Hot
         where colorT:struct
     {
 
+        public ImageRay() : base() { }
+        public ImageRay(ImageRay<colorT> other) : base(other) { }
+
         public virtual void SetSize(uint w, uint h)
         {
             _Reshape(w, h);
         }
 
-        public virtual uint Width => _Empty ? 0 : Dims[0];
-        public virtual uint Height => _Empty ? 0 : Dims[1];
+        public virtual uint Width => Empty ? 0 : Dims[0];
+        public virtual uint Height => Empty ? 0 : Dims[1];
 
         public virtual Color<colorT> Get(uint x, uint y)
         {

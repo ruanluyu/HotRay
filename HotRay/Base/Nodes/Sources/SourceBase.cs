@@ -24,7 +24,7 @@ namespace HotRay.Base.Nodes.Sources
 
         public override sealed IPort[] InputPorts
         {
-            get => sharedEmptyPorts;
+            get => SharedEmptyPorts;
         }
 
 

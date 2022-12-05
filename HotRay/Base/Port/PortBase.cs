@@ -1,6 +1,7 @@
 ﻿using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,11 +17,6 @@ namespace HotRay.Base.Port
             {
                 other.SourcePort.ConnectTo(this);
             }
-        }
-
-        public virtual RayBase? Ray
-        {
-            get; set;
         }
 
         List<IPort>? _targetPorts;
@@ -43,12 +39,49 @@ namespace HotRay.Base.Port
             }
         }
 
-        public abstract bool ConnectableTo(IPort? targetPort);
-
-        public void ConnectTo(IPort? targetPort)
+        IRay? _ray;
+        public virtual IRay? Ray
         {
-            if (targetPort == null) return;
-            if(ConnectableTo(targetPort) && !_TargetPorts.Contains(targetPort))
+            set
+            {
+                _ray = value;
+                if (_targetPorts != null)
+                {
+                    if(_ray == null)
+                    {
+                        for (int i = 0; i < _targetPorts.Count; i++)
+                        {
+                            _targetPorts[i].Ray = null;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < _targetPorts.Count; i++)
+                        {
+                            _targetPorts[i].Ray = i == 0 ? _ray : _ray.RayClone();
+                        }
+                    }
+                }
+            }
+            get
+            {
+                if (_ray == null)
+                {
+                    if(SourcePort != null && SourcePort.Ray != null) // supports some dynamic connection in runtime. 
+                    {
+                        _ray = SourcePort.Ray.RayClone();
+                    }
+                }
+                return _ray;
+            }
+        }
+        
+
+        public abstract bool ConnectableTo([NotNull] IPort targetPort);
+
+        public void ConnectTo([NotNull] IPort targetPort)
+        {
+            if (ConnectableTo(targetPort) && !_TargetPorts.Contains(targetPort))
             {
                 _TargetPorts.Add(targetPort);
                 if(targetPort.SourcePort != null)
@@ -57,15 +90,13 @@ namespace HotRay.Base.Port
             }
         }
 
-        public void DisconnectTo(IPort? targetPort)
+        public void DisconnectTo([NotNull] IPort targetPort)
         {
-            if (targetPort == null) return;
             targetPort.SourcePort = null;
             _TargetPorts.Remove(targetPort);
         }
 
-        public abstract void SendRay();
-        public virtual void ClearConnection()
+        public virtual void ClearConnections()
         {
             foreach (var p in _TargetPorts.ToArray())
             {

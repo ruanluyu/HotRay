@@ -26,10 +26,10 @@ namespace HotRay.Base.Nodes.Components
 
         public TwoTwoComponent(TwoTwoComponent<in0RayT, in1RayT, out0RayT, out1RayT> other) : base(other)
         {
-            inPort0 = CreatePort<in0RayT>(other.inPort0);
-            inPort1 = CreatePort<in1RayT>(other.inPort1);
-            outPort0 = CreatePort<out0RayT>(other.outPort0);
-            outPort1 = CreatePort<out1RayT>(other.outPort1);
+            inPort0 = CreatePortFrom<in0RayT>(other.inPort0);
+            inPort1 = CreatePortFrom<in1RayT>(other.inPort1);
+            outPort0 = CreatePortFrom<out0RayT>(other.outPort0);
+            outPort1 = CreatePortFrom<out1RayT>(other.outPort1);
         }
 
 

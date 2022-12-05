@@ -3,14 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using HotRay.Base.Ray.Lite;
 
-namespace HotRay.Base.Ray.Lite
+namespace HotRay.Base.Ray
 {
-    public class SignalRay : RayBase
+    public sealed class SignalRay : RayBase
     {
         public static readonly SignalRay SharedSignal = new();
 
 
-        public override object Clone() => SharedSignal;
+        public override IRay RayClone() => SharedSignal;
+
+
     }
 }

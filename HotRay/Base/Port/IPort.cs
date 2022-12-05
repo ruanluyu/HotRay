@@ -9,21 +9,21 @@ namespace HotRay.Base.Port
 {
     public interface IPort
     {
-        public RayBase? Ray { get; set; }
+        public IRay? Ray { get; set; }
 
-        public bool ConnectableTo(IPort? targetPort);
 
-        public void ConnectTo(IPort? targetPort);
+        public bool ConnectableTo(IPort targetPort);
 
-        public void DisconnectTo(IPort? targetPort);
+        public void ConnectTo(IPort targetPort);
 
-        public void ClearConnection();
+        public void DisconnectTo(IPort targetPort);
+
+        public void ClearConnections();
 
         public IReadOnlyList<IPort> TargetPorts { get;}
 
         public IPort? SourcePort { get; set; }
 
-        public void SendRay();
 
     }
 

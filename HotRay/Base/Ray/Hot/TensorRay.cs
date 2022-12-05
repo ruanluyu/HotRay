@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Ray.Hot
 {
 
-    public class TensorRay<numberT> : RayBase<numberT[]>
+    public class TensorRay<numberT> : MemoryRay<numberT>
         where numberT:struct
     {
         static readonly numberT[] sharedEmptyData = new numberT[0];
@@ -15,13 +15,16 @@ namespace HotRay.Base.Ray.Hot
 
         public uint[] Dims { get; private set; }
 
-        public TensorRay()
+        public TensorRay():base()
         {
             Data = sharedEmptyData;
             Dims = sharedEmptyDims;
         }
 
-        protected bool _Empty => Data.Length == 0;
+        public TensorRay(TensorRay<numberT> other):base(other)
+        {
+            Dims = Dims == sharedEmptyDims ? Dims : Dims!.ToArray();
+        }
 
         protected virtual void _Reshape(params uint[] dims)
         {
@@ -41,19 +44,15 @@ namespace HotRay.Base.Ray.Hot
                         totalLength = totalLength * Dims[i];
                     }
                 }
-                if (totalLength > 0) Data = new numberT[totalLength];
+                if (totalLength > 0) ResizeMemory(totalLength);
                 else Data = sharedEmptyData;
             }
             
         }
 
-        public override object Clone()
+        public override IRay RayClone()
         {
-            return new TensorRay<numberT>()
-            {
-                Data = Data == sharedEmptyData ? Data : Data.ToArray(),
-                Dims = Dims == sharedEmptyDims ? Dims : Dims.ToArray()
-            };
+            return new TensorRay<numberT>(this);
         }
 
         protected virtual ulong _CoordToID(params uint[] coords)
@@ -87,7 +86,7 @@ namespace HotRay.Base.Ray.Hot
         {
             try
             {
-                return Data[_CoordToID(ids)];
+                return Data![_CoordToID(ids)];
             }
             catch (Exception)
             {
@@ -99,7 +98,7 @@ namespace HotRay.Base.Ray.Hot
         {
             try
             {
-                Data[_CoordToID(ids)] = n;
+                Data![_CoordToID(ids)] = n;
             }
             catch (Exception)
             {
@@ -108,7 +107,8 @@ namespace HotRay.Base.Ray.Hot
 
         protected virtual void _Fill(numberT n)
         {
-            for (int i = 0; i < Data.Length; i++)
+            if (Empty) return;
+            for (int i = 0; i < Data!.Length; i++)
             {
                 Data[i] = n;
             }
@@ -118,7 +118,7 @@ namespace HotRay.Base.Ray.Hot
         protected virtual TensorRay<numberT> _Slice(uint[] start, uint[] count)
         {
             var res = new TensorRay<numberT>();
-            if (!_Empty)
+            if (!Empty)
             {
                 if (start.Length != count.Length) throw new ArgumentException("start.Length != count.Length");
                 if (start.Length != Dims.Length) throw new ArgumentException("start.Length != Dims.Length");
@@ -129,9 +129,9 @@ namespace HotRay.Base.Ray.Hot
                     cache[i] = Math.Min(Dims[i] - start[i], count[i]);
                 }
                 res._Reshape(cache);
-                if (!res._Empty)
+                if (!res.Empty)
                 {
-                    for (ulong i = 0; i < (ulong)res.Data.LongLength; i++)
+                    for (ulong i = 0; i < (ulong)res.Data!.LongLength; i++)
                     {
                         res._IDToCoord(i, cache);
                         for (int j = 0; j < cache.Length; j++)

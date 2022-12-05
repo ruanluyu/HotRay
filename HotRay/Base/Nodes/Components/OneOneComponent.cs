@@ -20,8 +20,8 @@ namespace HotRay.Base.Nodes.Components
 
         public OneOneComponent(OneOneComponent<inRayT, outRayT> other) : base(other)
         {
-            inPort0 = CreatePort<inRayT>(other.inPort0);
-            outPort0 = CreatePort<outRayT>(other.outPort0);
+            inPort0 = CreatePortFrom<inRayT>(other.inPort0);
+            outPort0 = CreatePortFrom<outRayT>(other.outPort0);
         }
 
 

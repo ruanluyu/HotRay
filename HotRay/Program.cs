@@ -7,14 +7,19 @@ namespace HotRay
     class AdderCore : ICore
     {
         [InPort(0)]
-        IntRay a { get; set; }
+        IntRay? a { get; set; }
         [InPort(1)]
-        IntRay b { get; set; }
+        IntRay? b { get; set; }
 
         [OutPort(0)]
-        FloatRay o { get; set; }
+        FloatRay? o { get; set; }
 
         public object Clone() => new AdderCore();
+
+        public void CopyFrom(ICore other)
+        {
+            throw new NotImplementedException();
+        }
 
         public void Process()
         {

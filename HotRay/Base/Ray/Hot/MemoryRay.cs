@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HotRay.Base.Ray.Hot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,18 +7,29 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray
 {
-    public class MemoryRay : RayBase<byte[]>
+    public class MemoryRay<dataT> : HotRayBase<dataT[]>
     {
-        static readonly byte[] sharedEmptyArray = new byte[0];
-
-        public MemoryRay()
+        public MemoryRay():base()
         {
-            Data = sharedEmptyArray;
+            Data = null;
         }
 
-        public override object Clone()
+        public MemoryRay(MemoryRay<dataT> other):base(other)
         {
-            return new MemoryRay() { Data = Data.ToArray() };
+            Data = other.Data?.ToArray();
+        }
+
+        public virtual void ResizeMemory(ulong bytes)
+        {
+            Data = new dataT[bytes];
+        }
+
+        public virtual bool Empty => (Data?.Length ?? 0) == 0;
+
+
+        public override IRay RayClone()
+        {
+            return new MemoryRay<dataT>(this);
         }
     }
 }

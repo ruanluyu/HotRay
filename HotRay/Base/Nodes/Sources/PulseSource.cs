@@ -1,4 +1,4 @@
-﻿using HotRay.Base.Ray.Lite;
+﻿using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
 using System.Linq;

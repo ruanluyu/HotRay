@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray.Lite
 {
-    public class IntRay : RayBase<long>
+    public class IntRay : LiteRayBase<long>
     {
 
     }

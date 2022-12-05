@@ -13,16 +13,17 @@ namespace HotRay.Base.Nodes
     public abstract class NodeBase: BaseObject, INode
     {
 
-        protected static readonly IPort[] sharedEmptyPorts = new IPort[0];
+        protected static readonly IPort[] SharedEmptyPorts = new IPort[0];
 
-        protected Port<rayT> CreatePort<rayT>() where rayT : RayBase
+
+        public Port<rayT> CreatePort<rayT>() where rayT : IRay
         {
             var p = new Port<rayT>();
             p.Parent = this;
             return p;
         }
 
-        protected Port<rayT> CreatePort<rayT>(Port<rayT> other) where rayT : RayBase
+        public Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : IRay
         {
             var p = new Port<rayT>(other);
             p.Parent = this;

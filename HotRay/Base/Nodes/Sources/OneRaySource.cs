@@ -18,7 +18,7 @@ namespace HotRay.Base.Nodes.Sources
 
         public OneRaySource(OneRaySource<rayT> other) : base(other)
         {
-            outPort0 = CreatePort<rayT>(other.outPort0);
+            outPort0 = CreatePortFrom<rayT>(other.outPort0);
         }
 
 

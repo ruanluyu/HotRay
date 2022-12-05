@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray
 {
-    public interface IRay:ICloneable
+    public interface IRay
     {
-
+        public IRay RayClone();
     }
 
 

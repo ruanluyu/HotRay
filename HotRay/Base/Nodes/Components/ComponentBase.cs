@@ -20,9 +20,9 @@ namespace HotRay.Base.Nodes.Components
 
         }
 
-        public override IPort[] InputPorts => sharedEmptyPorts;
+        public override IPort[] InputPorts => SharedEmptyPorts;
 
-        public override IPort[] OutputPorts => sharedEmptyPorts;
+        public override IPort[] OutputPorts => SharedEmptyPorts;
 
     }
 }

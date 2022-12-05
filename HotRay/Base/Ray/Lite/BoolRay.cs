@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray.Lite
 {
-    public class BoolRay : RayBase<bool>
+    public class BoolRay : LiteRayBase<bool>
     {
 
     }

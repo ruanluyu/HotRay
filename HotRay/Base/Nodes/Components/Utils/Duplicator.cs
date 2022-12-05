@@ -54,7 +54,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             inPort0.Ray = null;
             outPorts[0].Ray = refRay;
             for (int i = 1; i < outPorts.Length; i++)
-                outPorts[i].Ray = refRay.Clone() as rayT;
+                outPorts[i].Ray = refRay.RayClone();
 
             yield return Status.EmitAndShutdown;
         }

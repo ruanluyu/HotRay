@@ -41,13 +41,24 @@ namespace HotRay.Base.Nodes.Components.Processors
                 .ToArray();
 
             var gport = typeof(Port<>);
+            var createPortType = typeof(NodeBase).GetMethod(nameof(CreatePort))!;
 
             inports = inportProperties
-                .Select(p => (Activator.CreateInstance(gport.MakeGenericType(p.PropertyType)) as IPort)!)
+                .Select(p => {
+                    var port = (createPortType.MakeGenericMethod(p.PropertyType).Invoke(this, null) as PortBase)!;
+                    var attr = p.GetCustomAttribute<InPortAttribute>()!;
+                    port.Name = attr.portName ?? $"inport-{attr.index}";
+                    return port as IPort;
+                    })
                 .ToArray()!;
 
             outports = outportPorperties
-                .Select(p => (Activator.CreateInstance(gport.MakeGenericType(p.PropertyType)) as IPort)!)
+                .Select(p => {
+                    var port = (createPortType.MakeGenericMethod(p.PropertyType).Invoke(this, null) as PortBase)!;
+                    var attr = p.GetCustomAttribute<OutPortAttribute>()!;
+                    port.Name = attr.portName ?? $"outport-{attr.index}";
+                    return port as IPort;
+                })
                 .ToArray()!;
 
             if (inports.Length <= 0) throw new ArgumentException($"{typeof(coreT)} does not contain connectable inports. ");
@@ -86,7 +97,7 @@ namespace HotRay.Base.Nodes.Components.Processors
             for (int i = 0; i < outportPorperties.Length; i++)
             {
                 var p = outportPorperties[i];
-                outports[i].Ray = (p.GetValue(core) as RayBase)!;
+                outports[i].Ray = (p.GetValue(core) as IRay)!;
             }
         }
 
