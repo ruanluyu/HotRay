@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Nodes.Components.Processors
 {
     public class ProcessorBase<coreT>:ComponentBase
-        where coreT:ICore, new()
+        where coreT:class, ICore, new()
     {
-        protected IPort[] inports;
-        protected IPort[] outports;
+        protected PortBase[] inports;
+        protected PortBase[] outports;
 
         protected PropertyInfo[] inportProperties;
         protected PropertyInfo[] outportPorperties;
@@ -41,14 +41,14 @@ namespace HotRay.Base.Nodes.Components.Processors
                 .ToArray();
 
             var gport = typeof(Port<>);
-            var createPortType = typeof(NodeBase).GetMethod(nameof(CreatePort))!;
+            var createPortType = typeof(NodeBase).GetMethod(nameof(CreatePort), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!;
 
             inports = inportProperties
                 .Select(p => {
                     var port = (createPortType.MakeGenericMethod(p.PropertyType).Invoke(this, null) as PortBase)!;
                     var attr = p.GetCustomAttribute<InPortAttribute>()!;
                     port.Name = attr.portName ?? $"inport-{attr.index}";
-                    return port as IPort;
+                    return port as PortBase;
                     })
                 .ToArray()!;
 
@@ -57,7 +57,7 @@ namespace HotRay.Base.Nodes.Components.Processors
                     var port = (createPortType.MakeGenericMethod(p.PropertyType).Invoke(this, null) as PortBase)!;
                     var attr = p.GetCustomAttribute<OutPortAttribute>()!;
                     port.Name = attr.portName ?? $"outport-{attr.index}";
-                    return port as IPort;
+                    return port as PortBase;
                 })
                 .ToArray()!;
 
@@ -78,7 +78,7 @@ namespace HotRay.Base.Nodes.Components.Processors
 
         public ProcessorBase(ProcessorBase<coreT> processor):this()
         {
-            core.CopyFrom(processor.core);
+            core = (processor.core.CloneCore() as coreT)!;
         }
 
         private void _SendInPortRays()
@@ -115,8 +115,8 @@ namespace HotRay.Base.Nodes.Components.Processors
         }
 
 
-        public override IPort[] InputPorts => inports;
+        public override IReadOnlyList<PortBase> InPorts => inports;
 
-        public override IPort[] OutputPorts => outports;
+        public override IReadOnlyList<PortBase> OutPorts => outports;
     }
 }

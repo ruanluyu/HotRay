@@ -45,23 +45,6 @@ namespace HotRay.Base.Port
             set
             {
                 _ray = value;
-                if (_targetPorts != null)
-                {
-                    if(_ray == null)
-                    {
-                        for (int i = 0; i < _targetPorts.Count; i++)
-                        {
-                            _targetPorts[i].Ray = null;
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0; i < _targetPorts.Count; i++)
-                        {
-                            _targetPorts[i].Ray = i == 0 ? _ray : _ray.RayClone();
-                        }
-                    }
-                }
             }
             get
             {
@@ -75,7 +58,28 @@ namespace HotRay.Base.Port
                 return _ray;
             }
         }
-        
+
+
+        public virtual void SendRay()
+        {
+            if (_targetPorts != null)
+            {
+                if (_ray == null)
+                {
+                    for (int i = 0; i < _targetPorts.Count; i++)
+                    {
+                        _targetPorts[i].Ray = null;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < _targetPorts.Count; i++)
+                    {
+                        _targetPorts[i].Ray = i == 0 ? _ray : _ray.RayClone();
+                    }
+                }
+            }
+        }
 
         public abstract bool ConnectableTo([NotNull] IPort targetPort);
 

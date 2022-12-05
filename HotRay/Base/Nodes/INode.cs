@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,12 +24,12 @@ namespace HotRay.Base.Nodes
         /// <returns>The routine</returns>
         IEnumerator<Status> GetRoutine();
 
-        IPort[] InputPorts
+        IReadOnlyList<PortBase> InPorts
         {
             get;
         }
-        
-        IPort[] OutputPorts
+
+        IReadOnlyList<PortBase> OutPorts
         {
             get;
         }

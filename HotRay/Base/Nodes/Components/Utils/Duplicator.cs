@@ -43,9 +43,9 @@ namespace HotRay.Base.Nodes.Components.Utils
             }
         }
 
-        public override IPort[] InputPorts => new IPort[] { inPort0 };
+        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0 };
 
-        public override IPort[] OutputPorts => outPorts;
+        public override IReadOnlyList<PortBase> OutPorts => outPorts;
 
         public override IEnumerator<Status> GetRoutine()
         {

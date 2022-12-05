@@ -64,5 +64,10 @@ namespace HotRay.Base
         {
             return $"{Name}<uid: {UID}>";
         }
+
+        public override int GetHashCode()
+        {
+            return UID.GetHashCode();
+        }
     }
 }

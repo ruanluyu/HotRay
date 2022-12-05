@@ -20,6 +20,8 @@ namespace HotRay.Base.Port
 
         public void ClearConnections();
 
+        public void SendRay();
+
         public IReadOnlyList<IPort> TargetPorts { get;}
 
         public IPort? SourcePort { get; set; }

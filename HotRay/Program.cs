@@ -14,12 +14,7 @@ namespace HotRay
         [OutPort(0)]
         FloatRay? o { get; set; }
 
-        public object Clone() => new AdderCore();
-
-        public void CopyFrom(ICore other)
-        {
-            throw new NotImplementedException();
-        }
+        public ICore CloneCore() => new AdderCore();
 
         public void Process()
         {
@@ -35,17 +30,17 @@ namespace HotRay
             var i1 = new IntRay() { Data = 5 };
             var i2 = new IntRay() { Data = -9 };
             var adder = new ProcessorBase<AdderCore>();
-            adder.InputPorts[0].Ray = i1;
-            adder.InputPorts[1].Ray = i2;
+            adder.InPorts[0].Ray = i1;
+            adder.InPorts[1].Ray = i2;
             var r = adder.GetRoutine();
             while(r.MoveNext())
             {
                 if (r.Current == Base.Nodes.Status.Shutdown) throw new Exception();
             }
-            Console.WriteLine((adder.OutputPorts[0].Ray as FloatRay)!.Data);
-            Console.WriteLine(adder.InputPorts[0].ConnectableTo(adder.InputPorts[1]));
-            Console.WriteLine(adder.OutputPorts[0].ConnectableTo(adder.InputPorts[1]));
-            Console.WriteLine(adder.InputPorts[1].ConnectableTo(adder.OutputPorts[0]));
+            Console.WriteLine((adder.OutPorts[0].Ray as FloatRay)!.Data);
+            Console.WriteLine(adder.InPorts[0].ConnectableTo(adder.InPorts[1]));
+            Console.WriteLine(adder.OutPorts[0].ConnectableTo(adder.InPorts[1]));
+            Console.WriteLine(adder.InPorts[1].ConnectableTo(adder.OutPorts[0]));
         }
     }
 }

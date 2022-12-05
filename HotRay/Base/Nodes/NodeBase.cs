@@ -13,17 +13,17 @@ namespace HotRay.Base.Nodes
     public abstract class NodeBase: BaseObject, INode
     {
 
-        protected static readonly IPort[] SharedEmptyPorts = new IPort[0];
+        protected static readonly PortBase[] SharedEmptyPorts = new PortBase[0];
 
 
-        public Port<rayT> CreatePort<rayT>() where rayT : IRay
+        protected Port<rayT> CreatePort<rayT>() where rayT : IRay
         {
             var p = new Port<rayT>();
             p.Parent = this;
             return p;
         }
 
-        public Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : IRay
+        protected Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : IRay
         {
             var p = new Port<rayT>(other);
             p.Parent = this;
@@ -44,8 +44,8 @@ namespace HotRay.Base.Nodes
 
         public virtual void Init()
         {
-            InitInputPorts();
-            InitOutputPorts();
+            InitInPorts();
+            InitOutPorts();
         }
 
         public virtual IEnumerator<Status> GetRoutine()
@@ -53,32 +53,70 @@ namespace HotRay.Base.Nodes
             yield break;
         }
 
-        public abstract IPort[] InputPorts
-        {
-            get;
-        }
-        public abstract IPort[] OutputPorts
+        public abstract IReadOnlyList<PortBase> InPorts
         {
             get;
         }
 
-        public virtual void InitInputPorts()
+
+        public abstract IReadOnlyList<PortBase> OutPorts
         {
-            var p = InputPorts;
-            if (p == null) return;
-            for (int i = 0; i < p.Length; i++)
+            get;
+        }
+
+
+        private static PortBase? _GetPortByIndex(IReadOnlyList<PortBase> list, int id)
+        {
+            if (id < 0 || id >= list.Count) return null;
+            return list[id];
+        }
+        private static PortBase? _GetPortByUID(IReadOnlyList<PortBase> list, UIDType uid)
+        {
+            return list.FirstOrDefault(p => p.UID == uid);
+        }
+
+        private static IEnumerable<PortBase> _GetPortsByName(IReadOnlyList<PortBase> list, string name)
+        {
+            return list.Where(p => p.Name == name);
+        }
+
+        public virtual PortBase? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
+        public virtual PortBase? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
+
+        public virtual PortBase? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
+        public virtual PortBase? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
+
+        public virtual IEnumerable<PortBase> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
+        public virtual IEnumerable<PortBase> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
+
+        public virtual void ClearInConnections()
+        {
+            foreach (var p in InPorts)
             {
-                p[i].Ray = null;
+                p.ClearConnections();
+            }
+        }
+        public virtual void ClearOutConnections()
+        {
+            foreach (var p in OutPorts)
+            {
+                p.ClearConnections();
             }
         }
 
-        public virtual void InitOutputPorts()
+        public virtual void InitInPorts()
         {
-            var p = OutputPorts;
-            if (p == null) return;
-            for (int i = 0; i < p.Length; i++)
+            foreach (var p in InPorts)
             {
-                p[i].Ray = null;
+                p.Ray = null;
+            }
+        }
+
+        public virtual void InitOutPorts()
+        {
+            foreach (var p in OutPorts)
+            {
+                p.Ray = null;
             }
         }
 
