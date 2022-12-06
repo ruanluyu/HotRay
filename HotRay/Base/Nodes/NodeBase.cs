@@ -120,6 +120,6 @@ namespace HotRay.Base.Nodes
             }
         }
 
-        
+        public abstract INode CloneNode();
     }
 }

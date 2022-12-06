@@ -20,7 +20,7 @@ namespace HotRay.Base.Port
 
         public void ClearConnections();
 
-        public void SendRay();
+        public void SpreadRay();
 
         public IReadOnlyList<IPort> TargetPorts { get;}
 

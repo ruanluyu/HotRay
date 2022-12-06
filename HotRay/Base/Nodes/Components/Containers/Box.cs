@@ -18,6 +18,13 @@ namespace HotRay.Base.Nodes.Components.Containers
             public NodeBase node;
         }
 
+        public Box() : base() { }
+        public Box(Box other) : base(other) 
+        {
+            // TODO Copy jobs
+        }
+
+
         protected PortBase[] inports = SharedEmptyPorts;
         protected PortBase[] outports = SharedEmptyPorts;
 
@@ -52,6 +59,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             node.ClearInConnections();
             node.ClearOutConnections();
             nodeSet.Add(node);
+            // TODO: Solve cases that some connected nodes are outside of the box. 
         }
 
         public void RemoveNode(NodeBase node)
@@ -77,18 +85,26 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         bool hasResult = false;
         bool running = false;
+
+        
         public override void Init()
         {
             base.Init();
+            runThisTickRoutines.Clear();
+            runNextTickRoutines.Clear();
+            registeredNextTickNode.Clear();
+            registeredThisTickNode.Clear();
             running = false;
             hasResult = false;
+
+            
         }
-        
+
         void SpreadPortRays(IReadOnlyList<PortBase> ports)
         {
             foreach (var ip in ports)
             {
-                ip.SendRay();
+                ip.SpreadRay();
                 foreach (var port in ip.TargetPorts.OfType<PortBase>())
                 {
                     if (port.Parent is NodeBase node)
@@ -173,6 +189,11 @@ namespace HotRay.Base.Nodes.Components.Containers
                     searchedBox.Add(b);
                 }
             }
+        }
+
+        public override INode CloneNode()
+        {
+            return new Box(this);
         }
     }
 }

@@ -114,6 +114,10 @@ namespace HotRay.Base.Nodes.Components.Processors
             yield return Status.EmitAndShutdown;
         }
 
+        public override INode CloneNode()
+        {
+            return new ProcessorBase<coreT>();
+        }
 
         public override IReadOnlyList<PortBase> InPorts => inports;
 

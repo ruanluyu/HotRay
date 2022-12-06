@@ -26,6 +26,10 @@ namespace HotRay.Base.Nodes.Components.Utils
             get; set;
         }
 
+        public override INode CloneNode()
+        {
+            return new Delayer<rayT>(this);
+        }
 
         public override IEnumerator<Status> GetRoutine()
         {

@@ -47,6 +47,11 @@ namespace HotRay.Base.Nodes.Sources
             get;set;
         }
 
+        public override INode CloneNode()
+        {
+            return new PulseSource(this);
+        }
+
         public override IEnumerator<Status> GetRoutine()
         {
             int c = Count;

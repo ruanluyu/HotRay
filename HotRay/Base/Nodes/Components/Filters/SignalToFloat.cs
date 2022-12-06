@@ -22,6 +22,11 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         public double EmitValue { get; set; }
 
+        public override INode CloneNode()
+        {
+            return new SignalToFloat(this);
+        }
+
         protected override FloatRay ParseRayType(SignalRay inR)
         {
             return new FloatRay() { Data = EmitValue };

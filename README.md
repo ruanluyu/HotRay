@@ -1,21 +1,21 @@
 ![hotray-logo](hotray-logo.png)
 
-> Hotray is an open-source node graph framewrok developed in CSharp. 
+> HotRay is an open-source node graph framewrok developed in CSharp. 
 
-This project is inspired by the Redstone System in the video game Minecraft. You can build your own programs or services by just creating and connecting nodes in Hotray. 
+HotRay is inspired by the Redstone System in Minecraft. You can build your own programs or services by just creating and connecting nodes in HotRay. 
 
 
 ## Concepts
 
-There are 3 main concepts in Hotray. 
+There are 3 main concepts in HotRay. 
 
-1. Ray
-2. Tick
-3. Node
+1. Ray ☄️
+2. Tick ⏱️
+3. Node 📦
 
-### Ray
+### Ray ☄️
 
-All data is represented as "Ray"s in Hotray. 
+All data is represented as "Ray"s in HotRay. 
 
 > Example: 
 > - `IntRay` contains just a 64-bits integer; 
@@ -23,12 +23,12 @@ All data is represented as "Ray"s in Hotray.
 > - `SignalRay` contains nothing but used for communication purpose widely. 
 
 
-### Tick
+### Tick ⏱️
 
 "Tick" is time unit. 
 
 
-### Node
+### Node 📦
 
 "Node" is the minimum unit to execute code. 
 

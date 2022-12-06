@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes.Sources
 {
-    public class OneRaySource<rayT>:SourceBase 
+    public abstract class OneRaySource<rayT>:SourceBase 
         where rayT: RayBase
     {
         public OneRaySource() : base()

@@ -47,6 +47,11 @@ namespace HotRay.Base.Nodes.Components.Utils
 
         public override IReadOnlyList<PortBase> OutPorts => outPorts;
 
+        public override INode CloneNode()
+        {
+            return new Duplicator<rayT>(this);
+        }
+
         public override IEnumerator<Status> GetRoutine()
         {
             if (inPort0.Ray == null) yield return Status.Shutdown;

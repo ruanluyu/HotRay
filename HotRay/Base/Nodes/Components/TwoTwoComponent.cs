@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes.Components
 {
-    public class TwoTwoComponent<in0RayT, in1RayT, out0RayT, out1RayT> : ComponentBase 
+    public abstract class TwoTwoComponent<in0RayT, in1RayT, out0RayT, out1RayT> : ComponentBase 
         where in0RayT : RayBase
         where in1RayT : RayBase
         where out0RayT : RayBase

@@ -34,7 +34,7 @@ namespace HotRay.Base.Nodes
             get;
         }
 
-
+        public INode CloneNode();
 
     }
 }

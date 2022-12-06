@@ -1,4 +1,5 @@
 ﻿using HotRay.Base.Nodes.Components.Processors;
+using HotRay.Base.Nodes.Components.Utils;
 using HotRay.Base.Port;
 using HotRay.Base.Ray.Lite;
 
@@ -30,13 +31,25 @@ namespace HotRay
             var i1 = new IntRay() { Data = 5 };
             var i2 = new IntRay() { Data = -9 };
             var adder = new ProcessorBase<AdderCore>();
+            var printer = new PrintNode();
+
+
             adder.InPorts[0].Ray = i1;
             adder.InPorts[1].Ray = i2;
+
+            adder.OutPorts[0].ConnectTo(printer.InPorts[0]);
+
             var r = adder.GetRoutine();
+            
             while(r.MoveNext())
             {
                 if (r.Current == Base.Nodes.Status.Shutdown) throw new Exception();
+                adder.OutPorts[0].SpreadRay();
             }
+
+            var r2 = printer.GetRoutine();
+            while (r2.MoveNext()) ;
+
             Console.WriteLine((adder.OutPorts[0].Ray as FloatRay)!.Data);
             Console.WriteLine(adder.InPorts[0].ConnectableTo(adder.InPorts[1]));
             Console.WriteLine(adder.OutPorts[0].ConnectableTo(adder.InPorts[1]));

@@ -19,6 +19,11 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
         }
 
+        public override INode CloneNode()
+        {
+            return new PassBy<rayT>(this);
+        }
+
         public override IEnumerator<Status> GetRoutine()
         {
             if (inPort0.Ray == null) yield return Status.Shutdown;

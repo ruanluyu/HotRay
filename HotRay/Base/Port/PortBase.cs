@@ -60,7 +60,7 @@ namespace HotRay.Base.Port
         }
 
 
-        public virtual void SendRay()
+        public virtual void SpreadRay()
         {
             if (_targetPorts != null)
             {

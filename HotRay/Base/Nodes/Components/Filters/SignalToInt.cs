@@ -22,6 +22,11 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         public int EmitValue { get; set; }
 
+        public override INode CloneNode()
+        {
+            return new SignalToInt(this);
+        }
+
         protected override IntRay ParseRayType(SignalRay inR)
         {
             return new IntRay() { Data = EmitValue };
