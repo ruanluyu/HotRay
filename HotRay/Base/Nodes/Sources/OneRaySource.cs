@@ -25,7 +25,7 @@ namespace HotRay.Base.Nodes.Sources
         protected readonly Port<rayT> outPort0;
 
 
-        public override PortBase[] OutPorts => new PortBase[] { outPort0 };
+        public override IPort[] OutPorts => new IPort[] { outPort0 };
 
 
     }

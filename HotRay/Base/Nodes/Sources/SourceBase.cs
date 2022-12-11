@@ -22,12 +22,14 @@ namespace HotRay.Base.Nodes.Sources
 
 
 
-        public override sealed IReadOnlyList<PortBase> InPorts
+        public override sealed IReadOnlyList<IPort> InPorts
         {
             get => SharedEmptyPorts;
         }
 
 
-
+        public override sealed void OnPortUpdate(IPort inport)
+        {
+        }
     }
 }

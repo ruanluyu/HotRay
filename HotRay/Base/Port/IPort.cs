@@ -1,4 +1,5 @@
-﻿using HotRay.Base.Ray;
+﻿using HotRay.Base.Nodes;
+using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,22 +12,26 @@ namespace HotRay.Base.Port
     {
         public IRay? Ray { get; set; }
 
+        public BaseObject BaseObject { get; }
+
+        public Type RayType
+        {
+            get;
+        }
 
         public bool ConnectableTo(IPort targetPort);
 
         public void ConnectTo(IPort targetPort);
 
-        public void DisconnectTo(IPort targetPort);
-
         public void ClearConnections();
 
-        public void SpreadRay();
+        public void SendRay();
 
-        public IReadOnlyList<IPort> TargetPorts { get;}
+        public IPort? TargetPort { get;}
 
-        public IPort? SourcePort { get; set; }
+        public IPort? SourcePort { get; }
 
-
+        public IPort ClonePort();
     }
 
 }

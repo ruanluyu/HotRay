@@ -7,6 +7,11 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes
 {
+    /// <summary>
+    /// yield return false: no result and need continuously run at next step. <para />
+    /// yield return true: has result and need continuously run at next step. <para />
+    /// yield break or quit: deactivates node, will be activated again when any of the in-ports recieved data. <para />
+    /// </summary>
     public struct Status: IEquatable<Status>
     {
         public bool HasResult;

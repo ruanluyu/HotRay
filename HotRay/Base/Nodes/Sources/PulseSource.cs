@@ -52,7 +52,12 @@ namespace HotRay.Base.Nodes.Sources
             return new PulseSource(this);
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        public override void OnEntry()
+        {
+            RunRoutine(GetRoutine());
+        }
+
+        IEnumerator<Status> GetRoutine()
         {
             int c = Count;
             if (c == 0) yield return Status.Shutdown;

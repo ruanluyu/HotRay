@@ -1,4 +1,5 @@
 ﻿using HotRay.Base.Nodes.Components.Utils;
+using HotRay.Base.Port;
 using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
@@ -24,11 +25,22 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         protected abstract outRay ParseRayType(inRay inR);
 
-        public sealed override IEnumerator<Status> GetRoutine()
+        public sealed override void OnPortUpdate(IPort inport)
         {
-            if (inPort0.Ray == null) yield return Status.Shutdown;
+            RunRoutine(GetRoutine());
+        }
 
-            outPort0.Ray = ParseRayType((inPort0.Ray as inRay)!);
+        IEnumerator<Status> GetRoutine()
+        {
+            if (inPort0.Ray == null)
+            {
+                outPort0.Ray = null;
+            }
+            else
+            {
+                outPort0.Ray = ParseRayType((inPort0.Ray as inRay)!);
+            }
+
             inPort0.Ray = null;
             yield return Status.EmitAndShutdown;
         }

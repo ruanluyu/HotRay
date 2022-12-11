@@ -39,21 +39,6 @@ namespace HotRay
 
             adder.OutPorts[0].ConnectTo(printer.InPorts[0]);
 
-            var r = adder.GetRoutine();
-            
-            while(r.MoveNext())
-            {
-                if (r.Current == Base.Nodes.Status.Shutdown) throw new Exception();
-                adder.OutPorts[0].SpreadRay();
-            }
-
-            var r2 = printer.GetRoutine();
-            while (r2.MoveNext()) ;
-
-            Console.WriteLine((adder.OutPorts[0].Ray as FloatRay)!.Data);
-            Console.WriteLine(adder.InPorts[0].ConnectableTo(adder.InPorts[1]));
-            Console.WriteLine(adder.OutPorts[0].ConnectableTo(adder.InPorts[1]));
-            Console.WriteLine(adder.InPorts[1].ConnectableTo(adder.OutPorts[0]));
         }
     }
 }

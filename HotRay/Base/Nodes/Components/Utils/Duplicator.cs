@@ -20,6 +20,11 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
         }
 
+        public Duplicator(int count):base()
+        {
+            PortNum = count;
+        }
+
 
         public Duplicator(Duplicator<rayT> other) :base(other)
         {
@@ -31,7 +36,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             get => outPorts.Length;
             set
             {
-                if (value < 1) throw new ArgumentException("PortNum");
+                if (value < 0) PortNum = 0;
 
                 if (outPorts.Length == value) return;
 
@@ -43,23 +48,29 @@ namespace HotRay.Base.Nodes.Components.Utils
             }
         }
 
-        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0 };
+        public override IReadOnlyList<IPort> InPorts => new IPort[] { inPort0 };
 
-        public override IReadOnlyList<PortBase> OutPorts => outPorts;
+        public override IReadOnlyList<IPort> OutPorts => outPorts;
 
         public override INode CloneNode()
         {
             return new Duplicator<rayT>(this);
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        public override void OnPortUpdate(IPort inport)
         {
-            if (inPort0.Ray == null) yield return Status.Shutdown;
-            var refRay = inPort0.Ray!;
+            if (PortNum == 0) return;
+            RunRoutine(GetRoutine());
+        }
+
+        IEnumerator<Status> GetRoutine()
+        {
+            var refRay = inPort0.Ray;
             inPort0.Ray = null;
+
             outPorts[0].Ray = refRay;
             for (int i = 1; i < outPorts.Length; i++)
-                outPorts[i].Ray = refRay.RayClone();
+                outPorts[i].Ray = refRay?.RayClone();
 
             yield return Status.EmitAndShutdown;
         }

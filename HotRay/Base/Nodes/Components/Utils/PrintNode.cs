@@ -1,4 +1,5 @@
-﻿using HotRay.Base.Ray.Hot;
+﻿using HotRay.Base.Port;
+using HotRay.Base.Ray.Hot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,14 +26,20 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new PrintNode(this);
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        public override void OnPortUpdate(IPort inport)
+        {
+            if (inport.Ray == null) return;
+            RunRoutine(GetRoutine());
+        }
+
+        IEnumerator<Status> GetRoutine()
         {
             if(inPort0.Ray is ObjectRay objRay)
             {
                 if (Newline) Console.WriteLine(objRay.Data?.ToString() ?? "");
                 else Console.Write(objRay.Data?.ToString() ?? "");
-                yield return Status.Shutdown;
             }
+            yield return Status.Shutdown;
         }
     }
 }

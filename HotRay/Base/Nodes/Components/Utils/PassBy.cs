@@ -1,4 +1,5 @@
-﻿using HotRay.Base.Ray;
+﻿using HotRay.Base.Port;
+using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,14 +25,26 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new PassBy<rayT>(this);
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        public override void OnPortUpdate(IPort inport)
         {
-            if (inPort0.Ray == null) yield return Status.Shutdown;
+            RunRoutine(GetRoutine());
+        }
 
-            outPort0.Ray = inPort0.Ray;
-            inPort0.Ray = null;
-            outPort1.Ray = SignalRay.SharedSignal;
-            yield return Status.EmitAndShutdown;
+        IEnumerator<Status> GetRoutine()
+        {
+            if (inPort0.Ray == null)
+            {
+                outPort0.Ray = null;
+                yield return Status.EmitAndShutdown;
+            }
+            else
+            {
+                outPort0.Ray = inPort0.Ray;
+                inPort0.Ray = null;
+
+                outPort1.Ray = SignalRay.SharedSignal;
+                yield return Status.EmitAndShutdown;
+            }
         }
 
     }

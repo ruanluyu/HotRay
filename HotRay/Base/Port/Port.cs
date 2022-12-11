@@ -18,24 +18,14 @@ namespace HotRay.Base.Port
 
         }
 
-        public override bool ConnectableTo([NotNull]IPort targetPort)
+        public override Type RayType => typeof(rayT);
+
+        public override IPort ClonePort()
         {
-            if (targetPort is Port<SignalRay>) return true;
-
-            var t = typeof(rayT);
-            var tpType = targetPort.GetType();
-
-            if (typeof(Port<rayT>) == tpType) return true;
-
-            if (tpType.GetGenericTypeDefinition() != typeof(Port<>)) return false;
-            var ot = tpType.GetGenericArguments()[0];
-
-            if (t == ot) return true;
-            if (ot.IsInstanceOfType(this)) return true;
-
-            return false;
+            var np = new Port<rayT>(this);
+            np.TargetPort = null;
+            np.SourcePort = null;
+            return np;
         }
-
-
     }
 }

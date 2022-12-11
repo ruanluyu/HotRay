@@ -21,25 +21,25 @@ namespace HotRay.Base.Nodes.Components.Containers
         public Box() : base() { }
         public Box(Box other) : base(other) 
         {
-            // TODO Copy jobs
+            
         }
 
 
-        protected PortBase[] inports = SharedEmptyPorts;
-        protected PortBase[] outports = SharedEmptyPorts;
+        protected IPort[] inports = SharedEmptyPorts;
+        protected IPort[] outports = SharedEmptyPorts;
 
-        public override IReadOnlyList<PortBase> InPorts => inports;
+        public override IReadOnlyList<IPort> InPorts => inports;
 
-        public override IReadOnlyList<PortBase> OutPorts => outports;
+        public override IReadOnlyList<IPort> OutPorts => outports;
 
-        public void SetInputPorts(params PortBase[] ports)
+        public void SetInputPorts(params IPort[] ports)
         {
             ClearInConnections();
             inports = ports.Length == 0 ? SharedEmptyPorts : ports;
             InitInPorts();
         }
 
-        public void SetOutputPorts(params PortBase[] ports)
+        public void SetOutputPorts(params IPort[] ports)
         {
             ClearOutConnections();
             outports = ports.Length == 0 ? SharedEmptyPorts : ports;
@@ -47,23 +47,90 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        protected HashSet<NodeBase> nodeSet = new HashSet<NodeBase>();
+        protected HashSet<INode> nodeSet = new HashSet<INode>();
         protected Queue<RoutineContext> runThisTickRoutines = new Queue<RoutineContext>();
         protected Queue<RoutineContext> runNextTickRoutines = new Queue<RoutineContext>();
-        protected HashSet<NodeBase> registeredThisTickNode = new HashSet<NodeBase>();
-        protected HashSet<NodeBase> registeredNextTickNode = new HashSet<NodeBase>();
+        protected HashSet<INode> registeredThisTickNode = new HashSet<INode>();
+        protected HashSet<INode> registeredNextTickNode = new HashSet<INode>();
 
-        public void AddNode(NodeBase node)
+
+        private Queue<IPort>? _portCache;
+        private Queue<IPort> _PortCache
+        {
+            get
+            {
+                if (_portCache == null) _portCache = new Queue<IPort>();
+                return _portCache;
+            }
+        }
+        public void AddNode(INode node)
         {
             if (nodeSet.Contains(node)) return;
-            node.ClearInConnections();
-            node.ClearOutConnections();
+            
+            _LocalizeNode(node);
+        }
+
+        void _LocalizeNode(INode node)
+        {
             nodeSet.Add(node);
-            // TODO: Solve cases that some connected nodes are outside of the box. 
+
+            {
+                _PortCache.Clear();
+                foreach (var ip in node.InPorts)
+                {
+                    var sp = ip.SourcePort;
+                    if (sp == null) continue;
+                    if(sp.BaseObject.Parent is INode spParent)
+                    {
+                        if (!nodeSet.Contains(spParent))
+                        {
+                            var newp = (ip.ClonePort() as PortBase)!;
+                            newp.Parent = this;
+
+                            sp.ConnectTo(newp);
+                            newp.ConnectTo(ip);
+
+                            _PortCache.Enqueue(newp);
+                        }
+                    }
+                }
+                var nl = inports.ToList();
+                nl.AddRange(_PortCache);
+                inports = nl.ToArray();
+            }
+
+            {
+                _PortCache.Clear();
+                foreach (var op in node.OutPorts)
+                {
+                    var tp = op.TargetPort;
+                    if (tp == null) continue;
+                    if(tp.BaseObject.Parent is INode pnode)
+                    {
+                        if (!nodeSet.Contains(pnode))
+                        {
+                            var newp = (op.ClonePort() as PortBase)!;
+                            newp.Parent = this;
+
+                            op.ConnectTo(newp);
+                            newp.ConnectTo(tp);
+
+                            _PortCache.Enqueue(newp);
+                        }
+                    }
+                }
+                var nl = outports.ToList();
+                nl.AddRange(_PortCache);
+                outports = nl.ToArray();
+            }
+            _PortCache.Clear();
+
         }
 
         public void RemoveNode(NodeBase node)
         {
+            node.ClearInConnections();
+            node.ClearOutConnections();
             nodeSet.Remove(node);
         }
 
@@ -75,10 +142,10 @@ namespace HotRay.Base.Nodes.Components.Containers
             return res;
         }
 
-        public virtual IEnumerable<NodeBase> GetNodesByName(string name) => nodeSet.Where(n => n.Name == name);
+        public virtual IEnumerable<INode> GetNodesByName(string name) => nodeSet.Where(n => n.BaseObject.Name == name);
 
 
-        public virtual NodeBase? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.UID == uid).FirstOrDefault();
+        public virtual INode? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.BaseObject.UID == uid).FirstOrDefault();
 
 
         
@@ -100,38 +167,49 @@ namespace HotRay.Base.Nodes.Components.Containers
             
         }
 
-        void SpreadPortRays(IReadOnlyList<PortBase> ports)
+        void SpreadPortRays(IReadOnlyList<IPort> ports)
         {
             foreach (var ip in ports)
             {
-                ip.SpreadRay();
-                foreach (var port in ip.TargetPorts.OfType<PortBase>())
+                ip.SendRay();
+                if(ip.TargetPort?.BaseObject.Parent is INode node)
                 {
-                    if (port.Parent is NodeBase node)
+                    if (node == this)
                     {
-                        if (node == this)
-                        {
-                            hasResult = true;
-                        }
-                        else
-                        {
-                            if (!registeredThisTickNode.Contains(node) && nodeSet.Contains(node))
-                            {
-                                runThisTickRoutines.Enqueue(new RoutineContext()
-                                {
-                                    routine = node.GetRoutine(),
-                                    node = node,
-                                });
-                                registeredThisTickNode.Add(node);
-                            }
-                        }
+                        hasResult = true;
+                    }
+                    else
+                    {
+                        node.OnPortUpdate(ip.TargetPort);
                     }
                 }
             }
-            
         }
 
-        public override RoutineType GetRoutine()
+        void SpreadPortRays(params IPort[] ports)
+        {
+            SpreadPortRays(ports as IReadOnlyList<IPort>);
+        }
+
+        public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
+        {
+            runThisTickRoutines.Enqueue(new RoutineContext()
+            {
+                routine = routine,
+                node = node,
+            });
+        }
+
+        public override void OnPortUpdate(IPort inport)
+        {
+            SpreadPortRays(inport);
+            if (!running)
+            {
+                RunRoutine(GetRoutine());
+            }
+        }
+
+        RoutineType GetRoutine()
         {
             if (running) yield break;
             
@@ -172,7 +250,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             
         }
 
-        public virtual IEnumerator<NodeBase> GetNodeEnumerator(int? remainDepth = 8, HashSet<Box>? searchedBox = null)
+        public virtual IEnumerator<INode> GetNodeEnumerator(int? remainDepth = 8, HashSet<Box>? searchedBox = null)
         {
             if (searchedBox == null) searchedBox = new HashSet<Box>();
             if (remainDepth != null && remainDepth <= 0) yield break;
@@ -195,5 +273,6 @@ namespace HotRay.Base.Nodes.Components.Containers
         {
             return new Box(this);
         }
+
     }
 }

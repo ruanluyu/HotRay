@@ -1,4 +1,5 @@
-﻿using HotRay.Base.Port;
+﻿using HotRay.Base.Nodes.Components.Containers;
+using HotRay.Base.Port;
 using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace HotRay.Base.Nodes
     public abstract class NodeBase: BaseObject, INode
     {
 
-        protected static readonly PortBase[] SharedEmptyPorts = new PortBase[0];
+        protected static readonly IPort[] SharedEmptyPorts = new IPort[0];
 
 
         protected Port<rayT> CreatePort<rayT>() where rayT : IRay
@@ -42,52 +43,65 @@ namespace HotRay.Base.Nodes
 
         }
 
+        public BaseObject BaseObject
+        {
+            get
+            {
+                return this;
+            }
+        }
+
         public virtual void Init()
         {
             InitInPorts();
             InitOutPorts();
         }
 
-        public virtual IEnumerator<Status> GetRoutine()
-        {
-            yield break;
-        }
 
-        public abstract IReadOnlyList<PortBase> InPorts
+        public abstract IReadOnlyList<IPort> InPorts
         {
             get;
         }
 
 
-        public abstract IReadOnlyList<PortBase> OutPorts
+        public abstract IReadOnlyList<IPort> OutPorts
         {
             get;
         }
 
 
-        private static PortBase? _GetPortByIndex(IReadOnlyList<PortBase> list, int id)
+        protected void RunRoutine(IEnumerator<Status> routine)
+        {
+            if(Parent is Box b)
+            {
+                b.RegisterRoutine(this, routine);
+            }
+        }
+
+
+        private static IPort? _GetPortByIndex(IReadOnlyList<IPort> list, int id)
         {
             if (id < 0 || id >= list.Count) return null;
             return list[id];
         }
-        private static PortBase? _GetPortByUID(IReadOnlyList<PortBase> list, UIDType uid)
+        private static IPort? _GetPortByUID(IReadOnlyList<IPort> list, UIDType uid)
         {
-            return list.FirstOrDefault(p => p.UID == uid);
+            return list.FirstOrDefault(p => p.BaseObject.UID == uid);
         }
 
-        private static IEnumerable<PortBase> _GetPortsByName(IReadOnlyList<PortBase> list, string name)
+        private static IEnumerable<IPort> _GetPortsByName(IReadOnlyList<IPort> list, string name)
         {
-            return list.Where(p => p.Name == name);
+            return list.Where(p => p.BaseObject.Name == name);
         }
 
-        public virtual PortBase? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
-        public virtual PortBase? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
+        public virtual IPort? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
+        public virtual IPort? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
 
-        public virtual PortBase? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
-        public virtual PortBase? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
+        public virtual IPort? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
+        public virtual IPort? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
 
-        public virtual IEnumerable<PortBase> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
-        public virtual IEnumerable<PortBase> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
+        public virtual IEnumerable<IPort> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
+        public virtual IEnumerable<IPort> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
 
         public virtual void ClearInConnections()
         {
@@ -121,5 +135,15 @@ namespace HotRay.Base.Nodes
         }
 
         public abstract INode CloneNode();
+
+        public virtual void OnPortUpdate(IPort inport)
+        {
+
+        }
+        
+        public virtual void OnEntry()
+        {
+
+        }
     }
 }

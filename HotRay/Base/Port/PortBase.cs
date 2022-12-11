@@ -1,4 +1,5 @@
-﻿using HotRay.Base.Ray;
+﻿using HotRay.Base.Nodes;
+using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -19,25 +20,19 @@ namespace HotRay.Base.Port
             }
         }
 
-        List<IPort>? _targetPorts;
-        List<IPort> _TargetPorts
+
+        public BaseObject BaseObject
         {
             get
             {
-                if (_targetPorts == null) _targetPorts = new List<IPort>();
-                return _targetPorts;
+                return this;
             }
         }
 
-        public IPort? SourcePort { get; set; }
 
-        public IReadOnlyList<IPort> TargetPorts
-        {
-            get
-            {
-                return _TargetPorts;
-            }
-        }
+        public IPort? SourcePort { get; protected set; }
+
+        public IPort? TargetPort { get; protected set; }
 
         IRay? _ray;
         public virtual IRay? Ray
@@ -59,55 +54,67 @@ namespace HotRay.Base.Port
             }
         }
 
+        public abstract Type RayType { get; }
 
-        public virtual void SpreadRay()
+        public virtual void SendRay()
         {
-            if (_targetPorts != null)
+            if (TargetPort != null)
             {
-                if (_ray == null)
-                {
-                    for (int i = 0; i < _targetPorts.Count; i++)
-                    {
-                        _targetPorts[i].Ray = null;
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < _targetPorts.Count; i++)
-                    {
-                        _targetPorts[i].Ray = i == 0 ? _ray : _ray.RayClone();
-                    }
-                }
+                TargetPort.Ray = _ray;
             }
         }
 
-        public abstract bool ConnectableTo([NotNull] IPort targetPort);
+        public virtual bool ConnectableTo([NotNull] IPort targetPort)
+        {
+            if (targetPort == this) return false;
+            var tt = targetPort.RayType;
+            var mt = RayType;
+            if (mt == tt) return true;
+            if (tt == typeof(SignalRay)) return true;
+            if (mt.IsSubclassOf(tt)) return true;
+            return false;
+        }
 
+        /// <summary>
+        /// Will auto disconnect the Source port of targetPort
+        /// </summary>
+        /// <param name="targetPort"></param>
         public void ConnectTo([NotNull] IPort targetPort)
         {
-            if (ConnectableTo(targetPort) && !_TargetPorts.Contains(targetPort))
+            if(targetPort is PortBase tp)
             {
-                _TargetPorts.Add(targetPort);
-                if(targetPort.SourcePort != null)
-                    targetPort.SourcePort.DisconnectTo(targetPort);
-                targetPort.SourcePort = this;
+                if (TargetPort != tp && ConnectableTo(targetPort))
+                {
+                    if (tp.SourcePort is PortBase tpsp)
+                    {
+                        tpsp.TargetPort = null;
+                    }
+                    tp.SourcePort = this;
+                    if (TargetPort is PortBase atp)
+                    {
+                        atp.SourcePort = null;
+                    }
+                    TargetPort = targetPort;
+                }
             }
         }
 
-        public void DisconnectTo([NotNull] IPort targetPort)
-        {
-            targetPort.SourcePort = null;
-            _TargetPorts.Remove(targetPort);
-        }
 
         public virtual void ClearConnections()
         {
-            foreach (var p in _TargetPorts.ToArray())
+            if(TargetPort is PortBase pbt)
             {
-                DisconnectTo(p);
+                pbt.SourcePort = null;
+                TargetPort = null;
             }
-            if (SourcePort != null) SourcePort.DisconnectTo(this);
-            SourcePort = null;
+
+            if(SourcePort is PortBase pbf)
+            {
+                pbf.TargetPort = null;
+                SourcePort = null;
+            }
         }
+
+        public abstract IPort ClonePort();
     }
 }

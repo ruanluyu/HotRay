@@ -14,22 +14,18 @@ namespace HotRay.Base.Nodes
 
         void Init();
 
-        
+        public BaseObject BaseObject { get; }
 
-        /// <summary>
-        /// yield return false: no result and need continuously run at next step. <para />
-        /// yield return true: has result and need continuously run at next step. <para />
-        /// yield break or quit: deactivates node, will be activated again when any of the in-ports recieved data. <para />
-        /// </summary>
-        /// <returns>The routine</returns>
-        IEnumerator<Status> GetRoutine();
+        void OnPortUpdate(IPort inport);
 
-        IReadOnlyList<PortBase> InPorts
+        void OnEntry();
+
+        IReadOnlyList<IPort> InPorts
         {
             get;
         }
 
-        IReadOnlyList<PortBase> OutPorts
+        IReadOnlyList<IPort> OutPorts
         {
             get;
         }

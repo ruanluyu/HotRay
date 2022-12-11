@@ -31,7 +31,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Delayer<rayT>(this);
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        IEnumerator<Status> GetRoutine()
         {
             if (inPort0.Ray == null) yield return Status.Shutdown;
 

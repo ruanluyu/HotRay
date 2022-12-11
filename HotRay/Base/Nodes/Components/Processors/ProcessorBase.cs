@@ -101,7 +101,7 @@ namespace HotRay.Base.Nodes.Components.Processors
             }
         }
 
-        public override IEnumerator<Status> GetRoutine()
+        IEnumerator<Status> GetRoutine()
         {
             for (int i = 0; i < inports.Length; i++)
             {
