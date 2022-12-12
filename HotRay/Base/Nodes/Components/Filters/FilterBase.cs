@@ -25,24 +25,18 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         protected abstract outRay ParseRayType(inRay inR);
 
-        public sealed override void OnPortUpdate(IPort inport)
+        public sealed override Status OnPortUpdate(IPort inport)
         {
-            RunRoutine(GetRoutine());
-        }
-
-        IEnumerator<Status> GetRoutine()
-        {
-            if (inPort0.Ray == null)
+            if (inport.Ray == null)
             {
                 outPort0.Ray = null;
             }
             else
             {
-                outPort0.Ray = ParseRayType((inPort0.Ray as inRay)!);
+                outPort0.Ray = ParseRayType((inport.Ray as inRay)!);
             }
-
-            inPort0.Ray = null;
-            yield return Status.EmitAndShutdown;
+            return Status.EmitAndShutdown;
         }
+
     }
 }

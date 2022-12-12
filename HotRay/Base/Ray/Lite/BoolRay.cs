@@ -8,6 +8,18 @@ namespace HotRay.Base.Ray.Lite
 {
     public class BoolRay : LiteRayBase<bool>
     {
+        public BoolRay() : base() { }
+        public BoolRay(BoolRay other) : base(other) { }
+
+        public override IRay RayClone()
+        {
+            return new BoolRay(this);
+        }
+
+        public override string ToString()
+        {
+            return Data.ToString();
+        }
 
     }
 }

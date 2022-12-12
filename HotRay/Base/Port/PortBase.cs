@@ -43,13 +43,13 @@ namespace HotRay.Base.Port
             }
             get
             {
-                if (_ray == null)
+                /*if (_ray == null)
                 {
                     if(SourcePort != null && SourcePort.Ray != null) // supports some dynamic connection in runtime. 
                     {
                         _ray = SourcePort.Ray.RayClone();
                     }
-                }
+                }*/
                 return _ray;
             }
         }

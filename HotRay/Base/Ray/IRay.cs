@@ -9,6 +9,8 @@ namespace HotRay.Base.Ray
     public interface IRay
     {
         public IRay RayClone();
+
+        public string ToString();
     }
 
 

@@ -16,9 +16,14 @@ namespace HotRay.Base.Nodes
 
         public BaseObject BaseObject { get; }
 
-        void OnPortUpdate(IPort inport);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="inport"></param>
+        /// <returns>Has immediate result in outports or not</returns>
+        Status OnPortUpdate(IPort inport);
 
-        void OnEntry();
+        Status OnEntry();
 
         IReadOnlyList<IPort> InPorts
         {

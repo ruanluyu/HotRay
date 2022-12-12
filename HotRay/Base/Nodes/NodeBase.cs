@@ -123,6 +123,7 @@ namespace HotRay.Base.Nodes
             foreach (var p in InPorts)
             {
                 p.Ray = null;
+                p.BaseObject.Parent = this;
             }
         }
 
@@ -131,19 +132,43 @@ namespace HotRay.Base.Nodes
             foreach (var p in OutPorts)
             {
                 p.Ray = null;
+                p.BaseObject.Parent = this;
             }
         }
 
         public abstract INode CloneNode();
 
-        public virtual void OnPortUpdate(IPort inport)
+        public virtual Status OnPortUpdate(IPort inport)
         {
-
+            return Status.Shutdown;
         }
         
-        public virtual void OnEntry()
+        public virtual Status OnEntry()
         {
-
+            return Status.Shutdown;
         }
+
+
+        protected static Status EmitSignalAndShutDown(Port<SignalRay> outport, bool isHigh)
+        {
+            if(isHigh)
+            {
+                if (outport.Ray == null)
+                {
+                    outport.Ray = SignalRay.SharedSignal;
+                    return Status.EmitAndShutdown;
+                }
+            }
+            else
+            {
+                if (outport.Ray != null)
+                {
+                    outport.Ray = null;
+                    return Status.EmitAndShutdown;
+                }
+            }
+            return Status.Shutdown;
+        }
+
     }
 }

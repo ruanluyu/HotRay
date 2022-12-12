@@ -87,7 +87,7 @@ namespace HotRay.Base.Nodes.Components.Processors
             {
                 var p = inportProperties[i];
                 p.SetValue(core, inports[i].Ray);
-                inports[i].Ray = null;
+                // inports[i].Ray = null;
             }
         }
 
@@ -101,18 +101,21 @@ namespace HotRay.Base.Nodes.Components.Processors
             }
         }
 
-        IEnumerator<Status> GetRoutine()
+        public override Status OnPortUpdate(IPort inport)
         {
+            if (inport.Ray == null) return Status.Shutdown;
+            
             for (int i = 0; i < inports.Length; i++)
-            {
                 if (inports[i].Ray == null)
-                    yield return Status.Shutdown;
-            }
+                    return Status.Shutdown;
+
             _SendInPortRays();
             core.Process();
             _SendOutPortRays();
-            yield return Status.EmitAndShutdown;
+            
+            return Status.EmitAndShutdown;
         }
+
 
         public override INode CloneNode()
         {

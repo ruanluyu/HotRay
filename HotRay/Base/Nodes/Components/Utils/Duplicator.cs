@@ -57,22 +57,19 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Duplicator<rayT>(this);
         }
 
-        public override void OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(IPort inport)
         {
-            if (PortNum == 0) return;
-            RunRoutine(GetRoutine());
-        }
+            if (PortNum == 0) return Status.Shutdown;
 
-        IEnumerator<Status> GetRoutine()
-        {
             var refRay = inPort0.Ray;
-            inPort0.Ray = null;
+            // inPort0.Ray = null;
 
             outPorts[0].Ray = refRay;
             for (int i = 1; i < outPorts.Length; i++)
                 outPorts[i].Ray = refRay?.RayClone();
 
-            yield return Status.EmitAndShutdown;
+            return Status.EmitAndShutdown;
         }
+
     }
 }

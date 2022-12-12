@@ -62,7 +62,8 @@ namespace HotRay.Base
 
         public override string ToString()
         {
-            return $"{Name}<uid: {UID}>";
+            var display = string.IsNullOrEmpty(Name) ? this.GetType().Name : Name;
+            return $"{display}<uid: {UID}>";
         }
 
         public override int GetHashCode()

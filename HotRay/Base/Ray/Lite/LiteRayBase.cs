@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray.Lite
 {
-    public class LiteRayBase<dataT> : RayBase<dataT>
+    public abstract class LiteRayBase<dataT> : RayBase<dataT>
         where dataT : struct
     {
         public LiteRayBase() : base() { }
@@ -14,6 +14,7 @@ namespace HotRay.Base.Ray.Lite
 
         public override dataT Data { get; set; }
 
-        public override IRay RayClone() => new LiteRayBase<dataT>(this);
+        public override abstract string ToString();
+
     }
 }

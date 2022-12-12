@@ -9,7 +9,7 @@ namespace HotRay.Base.Nodes.Sources
 {
     public class RandomPulseSource : OneRaySource<SignalRay>
     {
-        public RandomPulseSource():base() { }
+        public RandomPulseSource():base() { EmitProbability = 0.5f; }
         public RandomPulseSource(RandomPulseSource other) :base(other) { EmitProbability = other.EmitProbability; RandomSeed = other.RandomSeed; }
 
         public RandomPulseSource(float prob, int seed) : base() { EmitProbability = prob; RandomSeed = seed; }
@@ -22,18 +22,30 @@ namespace HotRay.Base.Nodes.Sources
             return new RandomPulseSource(this);
         }
 
-        public override void OnEntry()
+        public override Status OnEntry()
         {
+            if(EmitProbability <= 0) return Status.Shutdown;
             RunRoutine(GetRoutine());
+            return Status.Shutdown;
         }
 
         IEnumerator<Status> GetRoutine()
         {
             var radomStatus = new Random(RandomSeed);
+            var lastSignal = false;
             while(true)
             {
-                outPort0.Ray = radomStatus.NextSingle() <= EmitProbability ? SignalRay.SharedSignal : null;
-                yield return Status.EmitAndWaitForNextStep;
+                var curSignal = radomStatus.NextSingle() <= EmitProbability;
+                if(curSignal != lastSignal)
+                {
+                    outPort0.Ray = curSignal ? SignalRay.SharedSignal : null;
+                    lastSignal = curSignal;
+                    yield return Status.EmitAndWaitForNextStep;
+                }
+                else
+                {
+                    yield return Status.WaitForNextStep;
+                }
             }
         }
 

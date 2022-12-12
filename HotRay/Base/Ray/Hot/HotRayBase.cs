@@ -15,5 +15,10 @@ namespace HotRay.Base.Ray.Hot
 
         public override dataT? Data { get; set; }
 
+        public override string ToString()
+        {
+            return Data?.ToString() ?? "";
+        }
+
     }
 }
