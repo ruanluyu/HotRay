@@ -14,7 +14,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         public Space():base() { }
         public Space(Space other):base(other) 
         {
-            MsPerTick = other.MsPerTick;
+            TicksPerSecond = other.TicksPerSecond;
             PrintTick = other.PrintTick;
         }
 
@@ -23,7 +23,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             return new Space(this);
         }
 
-        public double MsPerTick
+        public int TicksPerSecond
         {
             get;set;
         }
@@ -32,22 +32,68 @@ namespace HotRay.Base.Nodes.Components.Containers
             get;set;
         }
 
-        public Task Run()
+        bool _running = false;
+        public bool Running => _running;
+
+        public Task RunAsync()
         {
-            return Task.Run(async () =>
+            return Task.Run(TaskCore);
+        }
+
+        public void Run() => TaskCore();
+
+        void TaskCore()
+        {
+            if (_running) throw new Exception("Space is running. ");
+            _running = true;
+            try
             {
                 var routine = GetSpaceRoutine();
-                int ms = (int)Math.Round(MsPerTick);
-                while (routine.MoveNext())
+                double tps = TicksPerSecond;
+
+                
+                int tick = 0;
+                long startMs = Environment.TickCount64;
+
+                while (true)
                 {
-                    await Task.Delay(ms);
+                    
+                    try
+                    {
+                        if (routine.MoveNext())
+                        {
+                            if (PrintTick) Console.WriteLine($"Tick {tick} done. ");
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log($"Error: {e.Message}");
+                    }
+                    ++tick;
+                    double waitTime = (tick * 1000 / tps) 
+                        - ((int)(Environment.TickCount64- startMs));
+
+                    if (waitTime > 0) 
+                        Thread.Sleep((int)waitTime);
                 }
-            });
+            }
+            catch (Exception e)
+            {
+                Log($"Space crashed error: {e.Message}");
+            }
+            finally
+            {
+                _running = false;
+            }
         }
 
         IEnumerator GetSpaceRoutine()
         {
-            foreach (var source in nodeSet.OfType<SourceBase>())
+            foreach (var source in nodeSet)
             {
                 var status = source.OnEntry();
                 if(status.HasResult)
@@ -56,10 +102,9 @@ namespace HotRay.Base.Nodes.Components.Containers
                 }
             }
             var routine = GetRoutine();
-            long tick = 0;
+            
             while(routine.MoveNext())
             {
-                if (PrintTick) Console.WriteLine($"Tick {tick++} done. ");
                 yield return null;
             }
         }

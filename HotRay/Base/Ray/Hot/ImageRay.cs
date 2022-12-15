@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -42,5 +43,19 @@ namespace HotRay.Base.Ray.Hot
             _Fill(c);
         }
 
+        public override IRay RayClone()
+        {
+            return new ImageRay<colorT>(this);
+        }
+
+        public static ImageRay<byte> LoadRGBA256ImageFromPath(string? path)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool SaveRGBA256ImageFromPath(string? path, bool forceOverride = false)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

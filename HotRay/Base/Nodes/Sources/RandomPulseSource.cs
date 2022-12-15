@@ -40,7 +40,7 @@ namespace HotRay.Base.Nodes.Sources
                 {
                     outPort0.Ray = curSignal ? SignalRay.SharedSignal : null;
                     lastSignal = curSignal;
-                    yield return Status.EmitAndWaitForNextStep;
+                    yield return Status.WaitForNextStepAndEmit;
                 }
                 else
                 {

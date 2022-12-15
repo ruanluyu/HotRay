@@ -27,8 +27,9 @@ namespace HotRay.Base.Nodes.Components.Filters
             return new SignalToFloat(this);
         }
 
-        protected override FloatRay ParseRayType(SignalRay inR)
+        protected override FloatRay? ParseRayType(SignalRay? inR)
         {
+            if (inR == null) return null;
             return new FloatRay() { Data = EmitValue };
         }
     }

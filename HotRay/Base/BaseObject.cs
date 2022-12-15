@@ -9,7 +9,22 @@ namespace HotRay.Base
 {
     public class BaseObject
     {
-        public BaseObject? Parent { set; get; }
+        private BaseObject? _parent;
+        public BaseObject? Parent { 
+            set
+            {
+                _parent = value;
+                if(_parent == null)
+                {
+                    LogEvent = null;
+                }
+                else
+                {
+                    LogEvent += _parent.Log;
+                }
+            }
+            get => _parent;
+        }
 
         public struct UIDType
         {
@@ -60,7 +75,7 @@ namespace HotRay.Base
         }
 
 
-        public override string ToString()
+        public override string? ToString()
         {
             var display = string.IsNullOrEmpty(Name) ? this.GetType().Name : Name;
             return $"{display}<uid: {UID}>";
@@ -70,5 +85,17 @@ namespace HotRay.Base
         {
             return UID.GetHashCode();
         }
+
+
+        public event Action<string>? LogEvent;
+        protected virtual void Log(string message)
+        {
+            if (LogEvent == null) return;
+            LogEvent.Invoke($"{this}: {message}");
+        }
+
+
+        
+
     }
 }

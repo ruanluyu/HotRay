@@ -37,7 +37,7 @@ namespace HotRay
 
         static void Test1()
         {
-            Space space = new Space() { MsPerTick = 300, PrintTick = true };
+            Space space = new Space() { TicksPerSecond = 300, PrintTick = true };
 
             var pulse = space.CreateNode<PulseSource>();
             pulse.Interval = 3;
@@ -65,23 +65,29 @@ namespace HotRay
             adder.OutPorts[0].ConnectTo(print.InPorts[0]);
 
             space.Init();
-            var task = space.Run();
+            var task = space.RunAsync();
             task.Wait();
         }
 
         static void Test2()
         {
-            Space space = new Space() { MsPerTick = 300, PrintTick = true };
+            Space space = new Space() 
+            {
+                TicksPerSecond = 1, 
+                PrintTick = true, 
+                MaxNodePerTick = -1 
+            };
+            
 
             var pulse = space.CreateNode<PulseSource>();
-            // pulse.Interval = 3;
-            pulse.Count = 1;
+            pulse.Interval = 2;
+            pulse.Count = 2;
 
             var orgate = space.CreateNode<OrGate>();
             pulse.OutPorts[0].ConnectTo(orgate.InPorts[0]);
 
             var delayer = space.CreateNode<Delayer<SignalRay>>();
-            delayer.Delay = 3;
+            delayer.Delay = 5;
             orgate.OutPorts[0].ConnectTo(delayer.InPorts[0]);
             delayer.OutPorts[0].ConnectTo(orgate.InPorts[1]);
 
@@ -95,8 +101,16 @@ namespace HotRay
             print.Newline = true;
             intfilter.OutPorts[0].ConnectTo(print.InPorts[0]);
 
+
+            space.LogEvent += s => Console.WriteLine(s);
             space.Init();
-            var task = space.Run();
+            var task = space.RunAsync();
+            Console.CancelKeyPress += (obj, arg) =>
+            {
+                space.SendCancelSignal();
+                task.Wait(TimeSpan.FromMilliseconds(space.TicksPerSecond * 10));
+                arg.Cancel = true;
+            };
             task.Wait();
         }
     }

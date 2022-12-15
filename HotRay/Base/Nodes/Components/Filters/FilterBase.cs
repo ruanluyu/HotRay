@@ -23,19 +23,31 @@ namespace HotRay.Base.Nodes.Components.Filters
         {
         }
 
-        protected abstract outRay ParseRayType(inRay inR);
+        protected abstract outRay? ParseRayType(inRay? inR);
 
         public sealed override Status OnPortUpdate(IPort inport)
         {
-            if (inport.Ray == null)
+            if(inport.Ray is inRay inray)
             {
-                outPort0.Ray = null;
+                var outray = ParseRayType(inray);
+                if(outray == null)
+                {
+                    if (outPort0.Ray == null) return Status.Shutdown;
+                    outPort0.Ray = null;
+                    return Status.ShutdownAndEmit;
+                }
+                else
+                {
+                    outPort0.Ray = outray;
+                    return Status.ShutdownAndEmit;
+                }
             }
             else
             {
-                outPort0.Ray = ParseRayType((inport.Ray as inRay)!);
+                if (outPort0.Ray == null) return Status.Shutdown;
+                outPort0.Ray = null;
+                return Status.ShutdownAndEmit;
             }
-            return Status.EmitAndShutdown;
         }
 
     }

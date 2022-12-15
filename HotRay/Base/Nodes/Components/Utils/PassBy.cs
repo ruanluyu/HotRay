@@ -35,13 +35,13 @@ namespace HotRay.Base.Nodes.Components.Utils
             {
                 outPort0.Ray = null;
                 outPort1.Ray = null;
-                return Status.EmitAndShutdown;
+                return Status.ShutdownAndEmit;
             }
             else
             {
                 outPort0.Ray = inPort0.Ray;
                 outPort1.Ray = SignalRay.SharedSignal;
-                return Status.EmitAndShutdown;
+                return Status.ShutdownAndEmit;
             }
         }
 

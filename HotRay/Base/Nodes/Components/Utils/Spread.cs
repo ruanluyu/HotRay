@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes.Components.Utils
 {
-    public class Duplicator<rayT>: ComponentBase
+    public class Spread<rayT>: ComponentBase
         where rayT:RayBase
     {
 
@@ -16,17 +16,17 @@ namespace HotRay.Base.Nodes.Components.Utils
         protected readonly Port<rayT> inPort0 = new Port<rayT>();
         protected Port<rayT>[] outPorts = new Port<rayT>[] { new Port<rayT>() };
 
-        public Duplicator():base()
+        public Spread():base()
         {
         }
 
-        public Duplicator(int count):base()
+        public Spread(int count):base()
         {
             PortNum = count;
         }
 
 
-        public Duplicator(Duplicator<rayT> other) :base(other)
+        public Spread(Spread<rayT> other) :base(other)
         {
             PortNum = other.PortNum;
         }
@@ -54,7 +54,7 @@ namespace HotRay.Base.Nodes.Components.Utils
 
         public override INode CloneNode()
         {
-            return new Duplicator<rayT>(this);
+            return new Spread<rayT>(this);
         }
 
         public override Status OnPortUpdate(IPort inport)
@@ -68,7 +68,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             for (int i = 1; i < outPorts.Length; i++)
                 outPorts[i].Ray = refRay?.RayClone();
 
-            return Status.EmitAndShutdown;
+            return Status.ShutdownAndEmit;
         }
 
     }

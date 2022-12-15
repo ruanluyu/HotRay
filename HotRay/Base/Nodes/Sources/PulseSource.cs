@@ -12,7 +12,9 @@ namespace HotRay.Base.Nodes.Sources
 
         public PulseSource() : base()
         {
+            FirstDelay = 0;
             Count = 1;
+            Interval = 1;
         }
 
         public PulseSource(PulseSource other) : base(other)
@@ -32,7 +34,7 @@ namespace HotRay.Base.Nodes.Sources
         }
 
         /// <summary>
-        /// Greater than 0: Emission limit exists; Equals to 0: No emission; Less than 0: No emission limit. 
+        /// >0: Emission limit exists; otherwise: No emission limit. 
         /// </summary>
         public int Count
         {
@@ -40,7 +42,7 @@ namespace HotRay.Base.Nodes.Sources
         }
 
         /// <summary>
-        /// Greater than 0: Interval exists, Less or equals to 0: No interval
+        /// >0: Interval exists, otherwise: No interval. 
         /// </summary>
         public int Interval
         {
@@ -74,9 +76,9 @@ namespace HotRay.Base.Nodes.Sources
                 while (true)
                 {
                     outPort0.Ray = SignalRay.SharedSignal;
-                    yield return Status.EmitAndWaitForNextStep;
+                    yield return Status.WaitForNextStepAndEmit;
                     outPort0.Ray = null;
-                    yield return Status.EmitAndWaitForNextStep;
+                    yield return Status.WaitForNextStepAndEmit;
                     if (c > 0)
                     {
                         --c;
@@ -90,14 +92,14 @@ namespace HotRay.Base.Nodes.Sources
             else
             {
                 outPort0.Ray = SignalRay.SharedSignal;
-                if (c < 0) yield return Status.EmitAndShutdown;
-                yield return Status.EmitAndWaitForNextStep;
+                if (c < 0) yield return Status.ShutdownAndEmit;
+                yield return Status.WaitForNextStepAndEmit;
                 for (int i = 0; i < c-1; i++)
                 {
                     yield return Status.WaitForNextStep;
                 }
                 outPort0.Ray = null;
-                yield return Status.EmitAndShutdown;
+                yield return Status.ShutdownAndEmit;
             }
         }
 

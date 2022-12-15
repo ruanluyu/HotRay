@@ -10,7 +10,7 @@ namespace HotRay.Base.Ray
     {
         public IRay RayClone();
 
-        public string ToString();
+        public string? ToString();
     }
 
 

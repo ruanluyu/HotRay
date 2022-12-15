@@ -11,17 +11,27 @@ using System.Xml.Linq;
 namespace HotRay.Base.Nodes.Components.Containers
 {
     using RoutineType = IEnumerator<Status>;
+
     public class Box: ComponentBase
     {
+        /// <summary>
+        /// -1: unlimited, >=0 limited. default: -1 
+        /// </summary>
+        public int MaxNodePerTick { get; set; }
+
+
+
         public struct RoutineContext
         {
             public RoutineType routine;
             public NodeBase node;
         }
 
-        public Box() : base() { }
+        public Box() : base() { MaxNodePerTick = -1; }
         public Box(Box other) : base(other) 
         {
+            MaxNodePerTick = other.MaxNodePerTick;
+
             inports = other.inports.Select(p => p.ClonePort()).ToArray();
             outports = other.outports.Select(p => p.ClonePort()).ToArray();
 
@@ -107,7 +117,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         protected Queue<RoutineContext> runNextTickRoutines = new Queue<RoutineContext>();
 
 
-        private Queue<IPort>? _portCache;
+        /*private Queue<IPort>? _portCache;
         private Queue<IPort> _PortCache
         {
             get
@@ -116,7 +126,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 return _portCache;
             }
         }
-        /*public void AddNode(INode node)
+        public void AddNode(INode node)
         {
             if (nodeSet.Contains(node)) return;
             
@@ -189,6 +199,8 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public nodeT CreateNode<nodeT>() where nodeT:NodeBase, new()
         {
+            if (typeof(nodeT) == typeof(Space)) 
+                throw new ArgumentException("Space cannot be created inside a Box or a Space, use Box instead. ");
             nodeT res = new nodeT();
             res.Parent = this;
             nodeSet.Add(res);
@@ -278,37 +290,82 @@ namespace HotRay.Base.Nodes.Components.Containers
             });
         }
 
+        public override Status OnEntry()
+        {
+            foreach (var source in nodeSet)
+            {
+                var status = source.OnEntry();
+                if (status.HasResult)
+                {
+                    SpreadPortRays(status.PortMask ?? source.OutPorts);
+                }
+            }
+            if (runThisTickRoutines.Count > 0)
+            {
+                TurnOnRoutine();
+                if (portsHasResult.Count > 0) 
+                    return Status.ShutdownAndEmitWith(portsHasResult);
+            }
+            return Status.Shutdown;
+        }
+
         public override Status OnPortUpdate(IPort inport)
         {
             SpreadPortRays(inport);
+            TurnOnRoutine();
+            var a = portsHasResult.ToArray();
+            portsHasResult.Clear();
+            return Status.ShutdownAndEmitWith(a);
+        }
+
+        
+        void TurnOnRoutine()
+        {
             if (!running)
             {
                 running = true;
                 RunRoutine(GetRoutine());
             }
-            var a = portsHasResult.ToArray();
-            portsHasResult.Clear();
-            return Status.EmitAndShutdownWith(a);
         }
+
 
         protected RoutineType GetRoutine()
         {
             try
             {
+                var maxNode = MaxNodePerTick;
                 do
                 {
                     portsHasResult.Clear();
-
-                    while (runThisTickRoutines.TryDequeue(out var rc))
+                    int doneNode = 0;
+                    while (true)
                     {
-                        if (rc.routine.MoveNext())
+                        if (_cancel)
                         {
-                            var status = rc.routine.Current;
-                            if (status.HasResult) SpreadPortRays(rc.node.OutPorts);
-                            if (!status.Finished) runNextTickRoutines.Enqueue(rc);
+                            Log($"Canceled running. ");
+                            yield break;
+                        }
+                        if(maxNode >= 0 && doneNode >= maxNode)
+                        {
+                            Log($"Exceed limitation {maxNode}. ");
+                            yield break;
+                        }
+                        if(runThisTickRoutines.TryDequeue(out var rc))
+                        {
+                            if (rc.routine.MoveNext())
+                            {
+                                var status = rc.routine.Current;
+                                if (status.HasResult) SpreadPortRays(rc.node.OutPorts);
+                                if (!status.Finished) runNextTickRoutines.Enqueue(rc);
+                            }
+                            doneNode++;
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
-                    yield return Status.EmitAndWaitForNextStepWith(portsHasResult.ToArray());
+                    yield return Status.WaitForNextStepAndEmitWith(portsHasResult);
                     portsHasResult.Clear();
 
                     (runNextTickRoutines, runThisTickRoutines)
@@ -347,5 +404,13 @@ namespace HotRay.Base.Nodes.Components.Containers
             return new Box(this);
         }
 
+
+        bool _cancel = false;
+        public void SendCancelSignal()
+        {
+            _cancel = true;
+        }
+
+        
     }
 }

@@ -37,7 +37,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             if(Delay == 0)
             {
                 outPort0.Ray = inport.Ray;
-                return Status.EmitAndShutdown;
+                return Status.ShutdownAndEmit;
             }
             else
             {
@@ -54,7 +54,7 @@ namespace HotRay.Base.Nodes.Components.Utils
                 yield return Status.WaitForNextStep;
             }
             outPort0.Ray = outputRay;
-            yield return Status.EmitAndShutdown;
+            yield return Status.ShutdownAndEmit;
         }
 
     }

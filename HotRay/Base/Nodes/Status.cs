@@ -9,9 +9,7 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Nodes
 {
     /// <summary>
-    /// yield return false: no result and need continuously run at next step. <para />
-    /// yield return true: has result and need continuously run at next step. <para />
-    /// yield break or quit: deactivates node, will be activated again when any of the in-ports recieved data. <para />
+    /// Describe the status of the node. 
     /// </summary>
     public struct Status: IEquatable<Status>
     {
@@ -19,19 +17,53 @@ namespace HotRay.Base.Nodes
         public bool Finished;
         public IEnumerable<IPort>? PortMask;
 
-
+        /// <summary>
+        /// No result, and shutdown the routine in this tick. 
+        /// </summary>
         public static Status Shutdown => new Status() { HasResult = false, Finished = true, };
+
+        /// <summary>
+        /// No result, and this routine has works to do in the next tick.  
+        /// </summary>
         public static Status WaitForNextStep => new Status() { HasResult = false, Finished = false, };
-        public static Status EmitAndWaitForNextStep => new Status() { HasResult = true, Finished = false, };
-        public static Status EmitAndShutdown => new Status() { HasResult = true, Finished = true, };
 
-        public static Status EmitAndShutdownWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
-        
-        public static Status EmitAndShutdownWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
+        /// <summary>
+        /// Has result, and this routine has works to do in the next tick.  
+        /// </summary>
+        public static Status WaitForNextStepAndEmit => new Status() { HasResult = true, Finished = false, };
 
-        public static Status EmitAndWaitForNextStepWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
-        
-        public static Status EmitAndWaitForNextStepWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
+        /// <summary>
+        /// Has result, and shutdown the routine in this tick. 
+        /// </summary>
+        public static Status ShutdownAndEmit => new Status() { HasResult = true, Finished = true, };
+
+        /// <summary>
+        /// Has result, and shutdown the routine in this tick. 
+        /// </summary>
+        /// <param name="portMask">The outports that hold results. </param>
+        /// <returns></returns>
+        public static Status ShutdownAndEmitWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
+
+        /// <summary>
+        /// Has result, and shutdown the routine in this tick. 
+        /// </summary>
+        /// <param name="portMask">The outports that hold results. </param>
+        /// <returns></returns>
+        public static Status ShutdownAndEmitWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
+
+        /// <summary>
+        /// Has result, and this routine has works to do in the next tick.  
+        /// </summary>
+        /// <param name="portMask">The outports that hold results. </param>
+        /// <returns></returns>
+        public static Status WaitForNextStepAndEmitWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
+
+        /// <summary>
+        /// Has result, and this routine has works to do in the next tick.  
+        /// </summary>
+        /// <param name="portMask">The outports that hold results. </param>
+        /// <returns></returns>
+        public static Status WaitForNextStepAndEmitWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
 
 
         public bool Equals(Status other)

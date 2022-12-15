@@ -113,7 +113,7 @@ namespace HotRay.Base.Nodes.Components.Processors
             core.Process();
             _SendOutPortRays();
             
-            return Status.EmitAndShutdown;
+            return Status.ShutdownAndEmit;
         }
 
 

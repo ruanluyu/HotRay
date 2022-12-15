@@ -24,7 +24,7 @@ namespace HotRay.Base.Nodes.Components
 
         public override IReadOnlyList<IPort> OutPorts => SharedEmptyPorts;
 
-        public override sealed Status OnEntry() { return Status.Shutdown; }
+        public override Status OnEntry() { return Status.Shutdown; }
 
     }
 }
