@@ -26,12 +26,12 @@ namespace HotRay.Base.Nodes.Components.Utils
             get; set;
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new Delayer<rayT>(this);
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             
             if(Delay == 0)
@@ -46,7 +46,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             return Status.Shutdown;
         }
 
-        IEnumerator<Status> GetRoutine(IRay? outputRay)
+        IEnumerator<Status> GetRoutine(RayBase? outputRay)
         {
             int d = Delay;
             while (--d >= 0)

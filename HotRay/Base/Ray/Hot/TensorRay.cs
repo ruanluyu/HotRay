@@ -50,7 +50,7 @@ namespace HotRay.Base.Ray.Hot
             
         }
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new TensorRay<numberT>(this);
         }

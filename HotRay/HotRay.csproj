@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Base\IRay.cs~RF39946264.TMP" />
+    <None Remove="Base\RayBase.cs~RF39946264.TMP" />
   </ItemGroup>
 
 </Project>

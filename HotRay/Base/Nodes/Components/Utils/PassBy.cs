@@ -24,12 +24,12 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new PassBy<rayT>(this);
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             if (inPort0.Ray == null)
             {
@@ -45,7 +45,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             }
         }
 
-        public virtual bool InsertAfter(IPort outport)
+        public virtual bool InsertAfter(PortBase outport)
         {
             var t = outport.TargetPort;
 

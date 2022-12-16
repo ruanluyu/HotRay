@@ -17,7 +17,7 @@ namespace HotRay.Base.Nodes.Sources
         public float EmitProbability { set; get; }
         public int RandomSeed { set; get; }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new RandomPulseSource(this);
         }

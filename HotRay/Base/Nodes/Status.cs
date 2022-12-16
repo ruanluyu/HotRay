@@ -15,7 +15,7 @@ namespace HotRay.Base.Nodes
     {
         public bool HasResult;
         public bool Finished;
-        public IEnumerable<IPort>? PortMask;
+        public IEnumerable<PortBase>? PortMask;
 
         /// <summary>
         /// No result, and shutdown the routine in this tick. 
@@ -42,28 +42,28 @@ namespace HotRay.Base.Nodes
         /// </summary>
         /// <param name="portMask">The outports that hold results. </param>
         /// <returns></returns>
-        public static Status ShutdownAndEmitWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
+        public static Status ShutdownAndEmitWith(params PortBase[] portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
 
         /// <summary>
         /// Has result, and shutdown the routine in this tick. 
         /// </summary>
         /// <param name="portMask">The outports that hold results. </param>
         /// <returns></returns>
-        public static Status ShutdownAndEmitWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
+        public static Status ShutdownAndEmitWith(IEnumerable<PortBase> portMask) => new Status() { HasResult = true, Finished = true, PortMask = portMask };
 
         /// <summary>
         /// Has result, and this routine has works to do in the next tick.  
         /// </summary>
         /// <param name="portMask">The outports that hold results. </param>
         /// <returns></returns>
-        public static Status WaitForNextStepAndEmitWith(params IPort[] portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
+        public static Status WaitForNextStepAndEmitWith(params PortBase[] portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
 
         /// <summary>
         /// Has result, and this routine has works to do in the next tick.  
         /// </summary>
         /// <param name="portMask">The outports that hold results. </param>
         /// <returns></returns>
-        public static Status WaitForNextStepAndEmitWith(IEnumerable<IPort> portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
+        public static Status WaitForNextStepAndEmitWith(IEnumerable<PortBase> portMask) => new Status() { HasResult = true, Finished = false, PortMask = portMask };
 
 
         public bool Equals(Status other)

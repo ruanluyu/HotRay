@@ -46,27 +46,27 @@ namespace HotRay.Base.Nodes.Components.Utils
             }
         }
 
-        public override IReadOnlyList<IPort> OutPorts => new IPort[] { outPort0 };
+        public override IReadOnlyList<PortBase> OutPorts => new PortBase[] { outPort0 };
 
-        public override IReadOnlyList<IPort> InPorts => inPorts;
+        public override IReadOnlyList<PortBase> InPorts => inPorts;
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new AndGate(this);
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             if (PortNum == 0) return Status.Shutdown;
-            if (inport.Ray == null) return EmitSignalAndShutDown(outPort0, false);
+            if (inport.Ray == null) return EmitSignalTo(outPort0, false);
             for (int i = 0; i < inPorts.Length; i++)
             {
                 if (inPorts[i].Ray == null)
                 {
-                    return EmitSignalAndShutDown(outPort0, false);
+                    return EmitSignalTo(outPort0, false);
                 }
             }
-            return EmitSignalAndShutDown(outPort0, true);
+            return EmitSignalTo(outPort0, true);
         }
 
     }

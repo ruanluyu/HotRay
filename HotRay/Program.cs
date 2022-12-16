@@ -32,12 +32,12 @@ namespace HotRay
     {
         static void Main(string[] args)
         {
-            Test2();
+            Test3();
         }
 
         static void Test1()
         {
-            Space space = new Space() { TicksPerSecond = 300, PrintTick = true };
+            Space space = new Space() { TicksPerSecond = 300, PrintTickInfo = true };
 
             var pulse = space.CreateNode<PulseSource>();
             pulse.Interval = 3;
@@ -74,7 +74,7 @@ namespace HotRay
             Space space = new Space() 
             {
                 TicksPerSecond = 1, 
-                PrintTick = true, 
+                PrintTickInfo = true, 
                 MaxNodePerTick = -1 
             };
             
@@ -105,12 +105,30 @@ namespace HotRay
             space.LogEvent += s => Console.WriteLine(s);
             space.Init();
             var task = space.RunAsync();
-            Console.CancelKeyPress += (obj, arg) =>
+            
+            task.Wait();
+        }
+
+        static void Test3() // Dead lock
+        {
+            using Space space = new Space()
             {
-                space.SendCancelSignal();
-                task.Wait(TimeSpan.FromMilliseconds(space.TicksPerSecond * 10));
-                arg.Cancel = true;
+                TicksPerSecond = 1,
+                PrintTickInfo = true,
+                MaxNodePerTick = -1
             };
+            var src = space.CreateNode<PulseSource>();
+            src.Count = 1;
+
+            var org = space.CreateNode<Merge<SignalRay>>();
+            org.PortNum = 2;
+            src.OutPorts[0].ConnectTo(org.InPorts[0]);
+            org.OutPorts[0].ConnectTo(org.InPorts[1]); // Dead lock
+
+            space.LogEvent += s => Console.WriteLine(s);
+            space.Init();
+
+            var task = space.RunAsync();
             task.Wait();
         }
     }

@@ -11,7 +11,7 @@ namespace HotRay.Base.Ray.Lite
         public IntRay():base() { }
         public IntRay(IntRay other):base(other) { }
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new IntRay(this);
         }

@@ -22,7 +22,7 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         public int EmitValue { get; set; }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new SignalToInt(this);
         }

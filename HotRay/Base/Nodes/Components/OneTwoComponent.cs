@@ -34,7 +34,7 @@ namespace HotRay.Base.Nodes.Components
         protected readonly Port<out1RayT> outPort1;
 
 
-        public override IReadOnlyList<IPort> OutPorts => new IPort[] { outPort0, outPort1 };
-        public override IReadOnlyList<IPort> InPorts => new IPort[] { inPort0 };
+        public override IReadOnlyList<PortBase> OutPorts => new PortBase[] { outPort0, outPort1 };
+        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0 };
     }
 }

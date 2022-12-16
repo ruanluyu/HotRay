@@ -13,7 +13,7 @@ namespace HotRay.Base.Ray
 
         public override string? Data { set; get; }
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new StringRay(this);
         }

@@ -43,7 +43,7 @@ namespace HotRay.Base.Ray.Hot
             _Fill(c);
         }
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new ImageRay<colorT>(this);
         }

@@ -35,12 +35,12 @@ namespace HotRay.Base.Nodes.Components.Containers
             inports = other.inports.Select(p => p.ClonePort()).ToArray();
             outports = other.outports.Select(p => p.ClonePort()).ToArray();
 
-            var old2newInMap = new Dictionary<IPort, IPort>();
+            var old2newInMap = new Dictionary<PortBase, PortBase>();
 
             for (int i = 0; i < outports.Length; i++)
             {
                 // We use outports here because outports of box is inports of internal. 
-                if (other.outports[i].SourcePort is IPort) 
+                if (other.outports[i].SourcePort is PortBase) 
                     old2newInMap[other.outports[i]] = outports[i];
             }
 
@@ -49,13 +49,13 @@ namespace HotRay.Base.Nodes.Components.Containers
             {
                 var newnode = node.CloneNode();
                 nodeSet.Add(newnode);
-                IReadOnlyList<IPort> oldPorts = node.InPorts!;
-                IReadOnlyList<IPort> newPorts = newnode.InPorts!;
+                IReadOnlyList<PortBase> oldPorts = node.InPorts!;
+                IReadOnlyList<PortBase> newPorts = newnode.InPorts!;
                 if (oldPorts.Count != newPorts.Count) continue;
 
                 for (int i = 0; i < oldPorts.Count; i++)
                 {
-                    if(oldPorts[i].SourcePort is IPort)
+                    if(oldPorts[i].SourcePort is PortBase)
                         old2newInMap[oldPorts[i]] = newPorts[i];
                 }
             }
@@ -70,12 +70,12 @@ namespace HotRay.Base.Nodes.Components.Containers
         
 
 
-        protected IPort[] inports = SharedEmptyPorts;
-        protected IPort[] outports = SharedEmptyPorts;
+        protected PortBase[] inports = SharedEmptyPorts;
+        protected PortBase[] outports = SharedEmptyPorts;
 
-        public override IReadOnlyList<IPort> InPorts => inports;
+        public override IReadOnlyList<PortBase> InPorts => inports;
 
-        public override IReadOnlyList<IPort> OutPorts => outports;
+        public override IReadOnlyList<PortBase> OutPorts => outports;
 
         public void ResetInputPortsWith(params PortBase[] ports)
         {
@@ -92,7 +92,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
         
-        public Port<rayT> AddInPort<rayT>() where rayT:IRay
+        public Port<rayT> AddInPort<rayT>() where rayT:RayBase
         {
             var ips = inports.ToList();
             var newp = new Port<rayT>();
@@ -101,7 +101,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             return newp;
         }
 
-        public Port<rayT> AddOutPort<rayT>() where rayT:IRay
+        public Port<rayT> AddOutPort<rayT>() where rayT:RayBase
         {
             var ips = outports.ToList();
             var newp = new Port<rayT>();
@@ -112,28 +112,28 @@ namespace HotRay.Base.Nodes.Components.Containers
 
 
 
-        protected HashSet<INode> nodeSet = new HashSet<INode>();
+        protected HashSet<NodeBase> nodeSet = new HashSet<NodeBase>();
         protected Queue<RoutineContext> runThisTickRoutines = new Queue<RoutineContext>();
         protected Queue<RoutineContext> runNextTickRoutines = new Queue<RoutineContext>();
 
 
-        /*private Queue<IPort>? _portCache;
-        private Queue<IPort> _PortCache
+        /*private Queue<PortBase>? _portCache;
+        private Queue<PortBase> _PortCache
         {
             get
             {
-                if (_portCache == null) _portCache = new Queue<IPort>();
+                if (_portCache == null) _portCache = new Queue<PortBase>();
                 return _portCache;
             }
         }
-        public void AddNode(INode node)
+        public void AddNode(NodeBase node)
         {
             if (nodeSet.Contains(node)) return;
             
             _LocalizeNode(node);
         }
 
-        void _LocalizeNode(INode node)
+        void _LocalizeNode(NodeBase node)
         {
             nodeSet.Add(node);
 
@@ -143,7 +143,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 {
                     var sp = ip.SourcePort;
                     if (sp == null) continue;
-                    if(sp.BaseObject.Parent is INode spParent)
+                    if(sp.BaseObject.Parent is NodeBase spParent)
                     {
                         if (!nodeSet.Contains(spParent))
                         {
@@ -168,7 +168,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 {
                     var tp = op.TargetPort;
                     if (tp == null) continue;
-                    if(tp.BaseObject.Parent is INode pnode)
+                    if(tp.BaseObject.Parent is NodeBase pnode)
                     {
                         if (!nodeSet.Contains(pnode))
                         {
@@ -207,26 +207,28 @@ namespace HotRay.Base.Nodes.Components.Containers
             return res;
         }
 
-        public virtual IEnumerable<INode> GetNodesByName(string name) => nodeSet.Where(n => n.BaseObject.Name == name);
+        public virtual IEnumerable<NodeBase> GetNodesByName(string name) => nodeSet.Where(n => n.BaseObject.Name == name);
 
 
-        public virtual INode? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.BaseObject.UID == uid).FirstOrDefault();
+        public virtual NodeBase? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.BaseObject.UID == uid).FirstOrDefault();
 
 
 
 
-        HashSet<IPort> portsHasResult = new HashSet<IPort>();
-        bool running = false;
+        HashSet<PortBase> portsHasResult = new HashSet<PortBase>();
+        bool _running = false;
 
         
         public override void Init()
         {
             base.Init();
 
+
             runThisTickRoutines.Clear();
             runNextTickRoutines.Clear();
 
-            running = false;
+            _cancel = false;
+            _running = false;
             portsHasResult.Clear();
 
             foreach (var node in nodeSet)
@@ -235,16 +237,19 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        Queue<IPort> _spreadBFS = new Queue<IPort>();
-        protected void SpreadPortRays(IEnumerable<IPort> ports)
-        {
-            foreach (var ip in ports)
-                _spreadBFS.Enqueue(ip);
+        Queue<PortBase> _spreadBFS = new Queue<PortBase>();
 
+        void _SpreadPortRaysRecursively()
+        {
             while (_spreadBFS.TryDequeue(out var ip))
             {
+                if (!_PassNodeLimitationCheck())
+                {
+                    _spreadBFS.Clear();
+                    return;
+                }
                 ip.SendRay();
-                if(ip.TargetPort?.BaseObject.Parent is INode node)
+                if (ip.TargetPort?.BaseObject.Parent is NodeBase node)
                 {
                     if (node == this)
                     {
@@ -253,32 +258,35 @@ namespace HotRay.Base.Nodes.Components.Containers
                     else
                     {
                         var status = node.OnPortUpdate(ip.TargetPort);
-                        if(status.HasResult)
+                        if (status.HasResult)
                         {
-                            if(status.PortMask == null)
+                            IEnumerable<PortBase> targetPorts = status.PortMask ?? node.OutPorts;
+                            foreach (var op in targetPorts)
                             {
-                                foreach (var op in node.OutPorts)
-                                {
-                                    _spreadBFS.Enqueue(op);
-                                }
-                            }
-                            else
-                            {
-                                foreach (var op in status.PortMask)
-                                {
-                                    _spreadBFS.Enqueue(op);
-                                }
+                                _spreadBFS.Enqueue(op);
                             }
                         }
+                        _doneNode++;
                     }
                 }
             }
         }
 
 
-        void SpreadPortRays(params IPort[] ports)
+        protected void SpreadPortRays(IEnumerable<PortBase> ports)
         {
-            SpreadPortRays(ports as IReadOnlyList<IPort>);
+            _spreadBFS.Clear();
+
+            foreach (var ip in ports)
+                _spreadBFS.Enqueue(ip);
+
+            _SpreadPortRaysRecursively();
+        }
+
+
+        void SpreadPortRays(params PortBase[] ports)
+        {
+            SpreadPortRays(ports as IReadOnlyList<PortBase>);
         }
 
         public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
@@ -309,7 +317,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             return Status.Shutdown;
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             SpreadPortRays(inport);
             TurnOnRoutine();
@@ -321,23 +329,40 @@ namespace HotRay.Base.Nodes.Components.Containers
         
         void TurnOnRoutine()
         {
-            if (!running)
+            if (!_running)
             {
-                running = true;
+                _running = true;
                 RunRoutine(GetRoutine());
             }
         }
 
+        int _doneNode = 0;
+        int _maxNode = -1;
+
+        bool _PassNodeLimitationCheck()
+        {
+            if(_cancel)
+            {
+                Log($"Cancellation detected, quiting ray-spread loop... ");
+                return false;
+            }
+            if (_maxNode >= 0 && _doneNode >= _maxNode)
+            {
+                Log($"Exceed limitation {_maxNode}. ");
+                return false;
+            }
+            return true;
+        }
 
         protected RoutineType GetRoutine()
         {
             try
             {
-                var maxNode = MaxNodePerTick;
+                _maxNode = MaxNodePerTick;
                 do
                 {
                     portsHasResult.Clear();
-                    int doneNode = 0;
+                    _doneNode = 0;
                     while (true)
                     {
                         if (_cancel)
@@ -345,9 +370,8 @@ namespace HotRay.Base.Nodes.Components.Containers
                             Log($"Canceled running. ");
                             yield break;
                         }
-                        if(maxNode >= 0 && doneNode >= maxNode)
+                        if(!_PassNodeLimitationCheck())
                         {
-                            Log($"Exceed limitation {maxNode}. ");
                             yield break;
                         }
                         if(runThisTickRoutines.TryDequeue(out var rc))
@@ -358,7 +382,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                                 if (status.HasResult) SpreadPortRays(rc.node.OutPorts);
                                 if (!status.Finished) runNextTickRoutines.Enqueue(rc);
                             }
-                            doneNode++;
+                            _doneNode++;
                         }
                         else
                         {
@@ -376,11 +400,11 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
             finally
             {
-                running = false;
+                _running = false;
             }
         }
 
-        public virtual IEnumerator<INode> GetNodeEnumerator(int? remainDepth = 8, HashSet<Box>? searchedBox = null)
+        public virtual IEnumerator<NodeBase> GetNodeEnumerator(int? remainDepth = 8, HashSet<Box>? searchedBox = null)
         {
             if (searchedBox == null) searchedBox = new HashSet<Box>();
             if (remainDepth != null && remainDepth <= 0) yield break;
@@ -399,7 +423,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new Box(this);
         }
@@ -411,6 +435,24 @@ namespace HotRay.Base.Nodes.Components.Containers
             _cancel = true;
         }
 
-        
+
+        private bool disposedValue;
+        protected override void Dispose(bool disposing)
+        {
+            if(!disposedValue)
+            {
+                if (disposing)
+                {
+                    foreach (var node in nodeSet)
+                    {
+                        node.Dispose();
+                    }
+                    nodeSet.Clear();
+                }
+                disposedValue = true;
+            }
+            base.Dispose(disposing);
+        }
+
     }
 }

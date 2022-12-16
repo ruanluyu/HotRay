@@ -49,7 +49,7 @@ namespace HotRay.Base.Nodes.Components.Filters
 
 
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new SignalToImage(this);
         }

@@ -22,12 +22,12 @@ namespace HotRay.Base.Nodes.Components.Utils
             get; set;
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new Print<rayT>(this);
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             if (inport?.Ray is rayT objRay)
             {

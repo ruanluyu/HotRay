@@ -10,20 +10,20 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes
 {
-    public abstract class NodeBase: BaseObject, INode
+    public abstract class NodeBase: BaseObject, IDisposable
     {
 
-        protected static readonly IPort[] SharedEmptyPorts = new IPort[0];
+        protected static readonly PortBase[] SharedEmptyPorts = new PortBase[0];
+        
 
-
-        protected Port<rayT> CreatePort<rayT>() where rayT : IRay
+        protected Port<rayT> CreatePort<rayT>() where rayT : RayBase
         {
             var p = new Port<rayT>();
             p.Parent = this;
             return p;
         }
 
-        protected Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : IRay
+        protected Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : RayBase
         {
             var p = new Port<rayT>(other);
             p.Parent = this;
@@ -57,13 +57,13 @@ namespace HotRay.Base.Nodes
         }
 
 
-        public abstract IReadOnlyList<IPort> InPorts
+        public abstract IReadOnlyList<PortBase> InPorts
         {
             get;
         }
 
 
-        public abstract IReadOnlyList<IPort> OutPorts
+        public abstract IReadOnlyList<PortBase> OutPorts
         {
             get;
         }
@@ -72,29 +72,29 @@ namespace HotRay.Base.Nodes
         
 
 
-        private static IPort? _GetPortByIndex(IReadOnlyList<IPort> list, int id)
+        private static PortBase? _GetPortByIndex(IReadOnlyList<PortBase> list, int id)
         {
             if (id < 0 || id >= list.Count) return null;
             return list[id];
         }
-        private static IPort? _GetPortByUID(IReadOnlyList<IPort> list, UIDType uid)
+        private static PortBase? _GetPortByUID(IReadOnlyList<PortBase> list, UIDType uid)
         {
             return list.FirstOrDefault(p => p.BaseObject.UID == uid);
         }
 
-        private static IEnumerable<IPort> _GetPortsByName(IReadOnlyList<IPort> list, string name)
+        private static IEnumerable<PortBase> _GetPortsByName(IReadOnlyList<PortBase> list, string name)
         {
             return list.Where(p => p.BaseObject.Name == name);
         }
 
-        public virtual IPort? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
-        public virtual IPort? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
+        public virtual PortBase? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
+        public virtual PortBase? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
 
-        public virtual IPort? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
-        public virtual IPort? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
+        public virtual PortBase? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
+        public virtual PortBase? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
 
-        public virtual IEnumerable<IPort> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
-        public virtual IEnumerable<IPort> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
+        public virtual IEnumerable<PortBase> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
+        public virtual IEnumerable<PortBase> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
 
         public virtual void ClearInConnections()
         {
@@ -129,7 +129,7 @@ namespace HotRay.Base.Nodes
             }
         }
 
-        public abstract INode CloneNode();
+        public abstract NodeBase CloneNode();
 
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace HotRay.Base.Nodes
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
         /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result <br />
         /// </returns>
-        public virtual Status OnPortUpdate(IPort inport)
+        public virtual Status OnPortUpdate(PortBase inport)
         {
             return Status.Shutdown;
         }
@@ -199,7 +199,7 @@ namespace HotRay.Base.Nodes
         }
 
 
-        protected static Status EmitSignalAndShutDown(Port<SignalRay> outport, bool isHigh)
+        protected static Status EmitSignalTo(Port<SignalRay> outport, bool isHigh)
         {
             if(isHigh)
             {
@@ -220,5 +220,47 @@ namespace HotRay.Base.Nodes
             return Status.Shutdown;
         }
 
+        protected static Status EmitRayTo(PortBase outport, RayBase? ray)
+        {
+            if (outport.Ray != ray)
+            {
+                outport.Ray = ray;
+                return Status.ShutdownAndEmit;
+            }
+            return Status.Shutdown;
+        }
+
+
+        private bool disposedValue;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    ClearInConnections();
+                    ClearOutConnections();
+                    // TODO: 释放托管状态(托管对象)
+                }
+
+                // TODO: 释放未托管的资源(未托管的对象)并重写终结器
+                // TODO: 将大型字段设置为 null
+                disposedValue = true;
+            }
+        }
+
+
+        ~NodeBase()
+        {
+             // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+             Dispose(disposing: false);
+        }
+
+        public void Dispose()
+        {
+            // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
     }
 }

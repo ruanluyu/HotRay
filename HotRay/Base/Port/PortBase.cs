@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Port
 {
-    public abstract class PortBase : BaseObject, IPort
+    public abstract class PortBase : BaseObject
     {
         public PortBase() { }
         public PortBase(PortBase other) : base(other) 
@@ -30,12 +30,14 @@ namespace HotRay.Base.Port
         }
 
 
-        public IPort? SourcePort { get; protected set; }
+        public PortBase? SourcePort { get; protected set; }
 
-        public IPort? TargetPort { get; protected set; }
+        public PortBase? TargetPort { get; protected set; }
 
-        IRay? _ray;
-        public virtual IRay? Ray
+        RayBase? _ray;
+        
+
+        public virtual RayBase? Ray
         {
             set
             {
@@ -64,7 +66,7 @@ namespace HotRay.Base.Port
             }
         }
 
-        public virtual bool ConnectableTo([NotNull] IPort targetPort)
+        public virtual bool ConnectableTo([NotNull] PortBase targetPort)
         {
             if (targetPort == this) return false;
             var tt = targetPort.RayType;
@@ -79,7 +81,7 @@ namespace HotRay.Base.Port
         /// Will auto disconnect the Source port of targetPort
         /// </summary>
         /// <param name="targetPort"></param>
-        public void ConnectTo([NotNull] IPort targetPort)
+        public void ConnectTo([NotNull] PortBase targetPort)
         {
             if(targetPort is PortBase tp)
             {
@@ -95,6 +97,10 @@ namespace HotRay.Base.Port
                         atp.SourcePort = null;
                     }
                     TargetPort = targetPort;
+                }
+                else
+                {
+                    Log($"Failed to connect: {targetPort}");
                 }
             }
         }
@@ -115,6 +121,7 @@ namespace HotRay.Base.Port
             }
         }
 
-        public abstract IPort ClonePort();
+        public abstract PortBase ClonePort();
+
     }
 }

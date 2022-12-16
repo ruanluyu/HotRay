@@ -17,9 +17,27 @@ namespace HotRay.Base.Ray.Hot
 
 
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new ObjectRay(this);
+        }
+
+
+        private bool disposedValue;
+        protected override void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    if(Data is IDisposable dp)
+                    {
+                        dp.Dispose();
+                    }
+                }
+                disposedValue = true;
+            }
+            base.Dispose(disposing);
         }
     }
 }

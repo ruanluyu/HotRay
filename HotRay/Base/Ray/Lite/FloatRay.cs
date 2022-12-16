@@ -11,7 +11,7 @@ namespace HotRay.Base.Ray.Lite
         public FloatRay() : base() { }
         public FloatRay(FloatRay other) : base(other) { }
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new FloatRay(this);
         }

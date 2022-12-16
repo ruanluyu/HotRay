@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace HotRay.Base.Nodes.Components.Containers
 {
@@ -15,10 +16,10 @@ namespace HotRay.Base.Nodes.Components.Containers
         public Space(Space other):base(other) 
         {
             TicksPerSecond = other.TicksPerSecond;
-            PrintTick = other.PrintTick;
+            PrintTickInfo = other.PrintTickInfo;
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new Space(this);
         }
@@ -27,7 +28,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         {
             get;set;
         }
-        public bool PrintTick
+        public bool PrintTickInfo
         {
             get;set;
         }
@@ -35,9 +36,36 @@ namespace HotRay.Base.Nodes.Components.Containers
         bool _running = false;
         public bool Running => _running;
 
+
         public Task RunAsync()
         {
-            return Task.Run(TaskCore);
+            var cancelSrc = new CancellationTokenSource();
+            var ctoken = cancelSrc.Token;
+
+            var task = Task.Run(TaskCore, ctoken);
+            
+            Console.CancelKeyPress += (obj, arg) =>
+            {
+                try
+                {
+                    var timeout = 3.0 / TicksPerSecond;
+                    Log($"Detected cancel event {arg.SpecialKey}. Trying cancel task in {timeout:F2} [sec]...");
+                    SendCancelSignal();
+                    if (!task.Wait(TimeSpan.FromSeconds(timeout)))
+                    {
+                        cancelSrc.Cancel();
+                    }
+                }
+                catch(Exception e)
+                {
+                    Log(e.Message);
+                }
+                finally
+                {
+                    arg.Cancel = true;
+                }
+            };
+            return task;
         }
 
         public void Run() => TaskCore();
@@ -62,7 +90,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                     {
                         if (routine.MoveNext())
                         {
-                            if (PrintTick) Console.WriteLine($"Tick {tick} done. ");
+                            if (PrintTickInfo) Console.WriteLine($"Tick {tick} done. ");
                         }
                         else
                         {

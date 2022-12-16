@@ -49,7 +49,7 @@ namespace HotRay.Base.Nodes.Sources
             get;set;
         }
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new PulseSource(this);
         }

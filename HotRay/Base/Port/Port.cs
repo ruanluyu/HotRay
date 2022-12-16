@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Port
 {
 
-    public class Port<rayT> : PortBase where rayT : IRay
+    public class Port<rayT> : PortBase where rayT : RayBase
     {
 
         public Port() { }
@@ -20,7 +20,7 @@ namespace HotRay.Base.Port
 
         public override Type RayType => typeof(rayT);
 
-        public override IPort ClonePort()
+        public override PortBase ClonePort()
         {
             var np = new Port<rayT>(this);
             np.TargetPort = null;

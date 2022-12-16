@@ -27,7 +27,7 @@ namespace HotRay.Base.Ray
         public virtual bool Empty => (Data?.Length ?? 0) == 0;
 
 
-        public override IRay RayClone()
+        public override RayBase RayClone()
         {
             return new MemoryRay<dataT>(this);
         }

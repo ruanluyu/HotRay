@@ -97,11 +97,11 @@ namespace HotRay.Base.Nodes.Components.Processors
             for (int i = 0; i < outportPorperties.Length; i++)
             {
                 var p = outportPorperties[i];
-                outports[i].Ray = (p.GetValue(core) as IRay)!;
+                outports[i].Ray = (p.GetValue(core) as RayBase)!;
             }
         }
 
-        public override Status OnPortUpdate(IPort inport)
+        public override Status OnPortUpdate(PortBase inport)
         {
             if (inport.Ray == null) return Status.Shutdown;
             
@@ -117,7 +117,7 @@ namespace HotRay.Base.Nodes.Components.Processors
         }
 
 
-        public override INode CloneNode()
+        public override NodeBase CloneNode()
         {
             return new ProcessorBase<coreT>();
         }

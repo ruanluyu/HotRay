@@ -12,7 +12,7 @@ namespace HotRay.Base.Ray
         public static readonly SignalRay SharedSignal = new();
 
 
-        public override IRay RayClone() => SharedSignal;
+        public override RayBase RayClone() => SharedSignal;
 
 
     }
