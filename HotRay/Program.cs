@@ -1,5 +1,6 @@
 ﻿using HotRay.Base.Nodes.Components.Containers;
 using HotRay.Base.Nodes.Components.Filters;
+using HotRay.Base.Nodes.Components.Logics;
 using HotRay.Base.Nodes.Components.Processors;
 using HotRay.Base.Nodes.Components.Utils;
 using HotRay.Base.Nodes.Sources;
@@ -32,7 +33,7 @@ namespace HotRay
     {
         static void Main(string[] args)
         {
-            Test3();
+            Test2();
         }
 
         static void Test1()
@@ -73,8 +74,8 @@ namespace HotRay
         {
             Space space = new Space() 
             {
-                TicksPerSecond = 1, 
-                PrintTickInfo = true, 
+                TicksPerSecond = 10, 
+                PrintTickInfo = false, 
                 MaxNodePerTick = -1 
             };
             
@@ -113,7 +114,7 @@ namespace HotRay
         {
             using Space space = new Space()
             {
-                TicksPerSecond = 1,
+                TicksPerSecond = 5,
                 PrintTickInfo = true,
                 MaxNodePerTick = -1
             };
@@ -123,7 +124,12 @@ namespace HotRay
             var org = space.CreateNode<Merge<SignalRay>>();
             org.PortNum = 2;
             src.OutPorts[0].ConnectTo(org.InPorts[0]);
-            org.OutPorts[0].ConnectTo(org.InPorts[1]); // Dead lock
+
+            var delayer = space.CreateNode<Delayer<SignalRay>>();
+            org.OutPorts[0].ConnectTo(delayer.InPorts[0]);
+
+            delayer.OutPorts[0].ConnectTo(org.InPorts[1]); // Dead lock
+
 
             space.LogEvent += s => Console.WriteLine(s);
             space.Init();

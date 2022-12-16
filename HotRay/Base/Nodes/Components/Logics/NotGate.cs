@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HotRay.Base.Nodes.Components.Utils
+namespace HotRay.Base.Nodes.Components.Logics
 {
     public class NotGate : OneOneComponent<SignalRay, SignalRay>
     {
@@ -23,9 +23,9 @@ namespace HotRay.Base.Nodes.Components.Utils
             return Status.ShutdownAndEmit;
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            return EmitSignalTo(outPort0, inport.Ray == null);
+            return EmitSignalTo(outPort0, inPort0.Ray == null);
         }
     }
 }

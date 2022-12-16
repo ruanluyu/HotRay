@@ -10,23 +10,24 @@ namespace HotRay.Base.Nodes.Components.Utils
 {
     public class Merge<rayT>:ComponentBase where rayT:RayBase
     {
-        protected Port<rayT>[] inPorts = new Port<rayT>[] { new Port<rayT>() };
-        protected readonly Port<rayT> outPort0 = new Port<rayT>();
+        protected Port<rayT>[] inPorts = Array.Empty<Port<rayT>>();
+        protected readonly Port<rayT> outPort0;
 
-        public Merge() : base()
+        public Merge() : this(2)
         {
-            PortNum = 2;
         }
 
         public Merge(int count) : base()
         {
             PortNum = count;
+            outPort0 = CreatePort<rayT>();
         }
 
 
         public Merge(Merge<rayT> other) : base(other)
         {
             PortNum = other.PortNum;
+            outPort0 = CreatePort<rayT>();
         }
 
         public int PortNum
@@ -41,7 +42,7 @@ namespace HotRay.Base.Nodes.Components.Utils
                 inPorts = new Port<rayT>[value];
                 for (int i = 0; i < value; i++)
                 {
-                    inPorts[i] = new Port<rayT>();
+                    inPorts[i] = CreatePort<rayT>();
                 }
             }
         }
@@ -54,10 +55,19 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Merge<rayT>(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+
+        public override Status OnActivated()
         {
             if (PortNum == 0) return Status.Shutdown;
-            return EmitRayTo(inport, inport.Ray);
+            foreach (var port in inPorts)
+            {
+                if(port.RayChanged() && port.Ray != null)
+                {
+                    return EmitRayTo(outPort0, port.Ray);
+                }
+            }
+            return EmitRayTo(outPort0, null);
         }
+
     }
 }

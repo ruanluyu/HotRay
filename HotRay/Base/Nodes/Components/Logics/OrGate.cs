@@ -6,28 +6,31 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HotRay.Base.Nodes.Components.Utils
+namespace HotRay.Base.Nodes.Components.Logics
 {
-    public class OrGate:ComponentBase
+    public class OrGate : ComponentBase
     {
 
-        protected Port<SignalRay>[] inPorts = new Port<SignalRay>[] { new Port<SignalRay>() };
-        protected readonly Port<SignalRay> outPort0 = new Port<SignalRay>();
+        protected Port<SignalRay>[] inPorts = Array.Empty<Port<SignalRay>>();
+        protected readonly Port<SignalRay> outPort0;
 
         public OrGate() : base()
         {
             PortNum = 2;
+            outPort0 = CreatePort<SignalRay>();
         }
 
         public OrGate(int count) : base()
         {
             PortNum = count;
+            outPort0 = CreatePort<SignalRay>();
         }
 
 
         public OrGate(OrGate other) : base(other)
         {
             PortNum = other.PortNum;
+            outPort0 = CreatePort<SignalRay>();
         }
 
         public int PortNum
@@ -42,7 +45,7 @@ namespace HotRay.Base.Nodes.Components.Utils
                 inPorts = new Port<SignalRay>[value];
                 for (int i = 0; i < value; i++)
                 {
-                    inPorts[i] = new Port<SignalRay>();
+                    inPorts[i] = CreatePort<SignalRay>();
                 }
             }
         }
@@ -56,24 +59,14 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new OrGate(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
             if (PortNum == 0) return Status.Shutdown;
-            if(inport.Ray == null)
+            for (int i = 0; i < inPorts.Length; i++)
             {
-                for (int i = 0; i < inPorts.Length; i++)
-                {
-                    if (inPorts[i].Ray != null)
-                    {
-                        return EmitSignalTo(outPort0, true);
-                    }
-                }
-                return EmitSignalTo(outPort0, false);
+                if (inPorts[i].Ray != null) return EmitSignalTo(outPort0, true);
             }
-            else
-            {
-                return EmitSignalTo(outPort0, true);
-            }
+            return EmitSignalTo(outPort0, false);
         }
 
     }

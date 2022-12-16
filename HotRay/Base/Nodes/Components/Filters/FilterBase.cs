@@ -25,9 +25,9 @@ namespace HotRay.Base.Nodes.Components.Filters
 
         protected abstract outRay? ParseRayType(inRay? inR);
 
-        public sealed override Status OnPortUpdate(PortBase inport)
+        public sealed override Status OnActivated()
         {
-            if(inport.Ray is inRay inray)
+            if(inPort0.Ray is inRay inray)
             {
                 return EmitRayTo(outPort0, ParseRayType(inray));
             }

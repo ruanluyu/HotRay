@@ -42,13 +42,6 @@ namespace HotRay.Base.Nodes
 
         }
 
-        public BaseObject BaseObject
-        {
-            get
-            {
-                return this;
-            }
-        }
 
         public virtual void Init()
         {
@@ -79,12 +72,12 @@ namespace HotRay.Base.Nodes
         }
         private static PortBase? _GetPortByUID(IReadOnlyList<PortBase> list, UIDType uid)
         {
-            return list.FirstOrDefault(p => p.BaseObject.UID == uid);
+            return list.FirstOrDefault(p => p.UID == uid);
         }
 
         private static IEnumerable<PortBase> _GetPortsByName(IReadOnlyList<PortBase> list, string name)
         {
-            return list.Where(p => p.BaseObject.Name == name);
+            return list.Where(p => p.Name == name);
         }
 
         public virtual PortBase? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
@@ -116,7 +109,7 @@ namespace HotRay.Base.Nodes
             foreach (var p in InPorts)
             {
                 p.Ray = null;
-                p.BaseObject.Parent = this;
+                p.Parent = this;
             }
         }
 
@@ -125,7 +118,7 @@ namespace HotRay.Base.Nodes
             foreach (var p in OutPorts)
             {
                 p.Ray = null;
-                p.BaseObject.Parent = this;
+                p.Parent = this;
             }
         }
 
@@ -155,12 +148,12 @@ namespace HotRay.Base.Nodes
 
         /// <summary>
         /// Will be called if any of the inports recieved rays. <br/>
-        /// This function will return in the same tick.  <br/>
+        /// This function will be called after 1 tick the first time any in-ports' ray changed.  <br/>
         /// This function may be called more than one times in the same tick. <br/>
         /// This function may be called more than one times with the same in-port. <br/><br/>
         /// If the node has lifetime more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
-        /// See also: <seealso cref="Base.Nodes.Components.Utils.Delayer{rayT}.OnPortUpdate"/>
+        /// See also: <seealso cref="Base.Nodes.Components.Utils.Delayer{rayT}"/>
         /// </summary>
         /// <param name="inport">The inport that holds new ray data. </param>
         /// <returns>
@@ -170,7 +163,7 @@ namespace HotRay.Base.Nodes
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
         /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result <br />
         /// </returns>
-        public virtual Status OnPortUpdate(PortBase inport)
+        public virtual Status OnActivated()
         {
             return Status.Shutdown;
         }
@@ -197,6 +190,8 @@ namespace HotRay.Base.Nodes
                 b.RegisterRoutine(this, routine);
             }
         }
+
+
 
 
         protected static Status EmitSignalTo(Port<SignalRay> outport, bool isHigh)

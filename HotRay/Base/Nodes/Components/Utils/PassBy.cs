@@ -9,9 +9,12 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Nodes.Components.Utils
 {
     /// <summary>
-    /// in0: data, out0: data, out1 signal
+    /// Emit signal if inport received ray. 
+    /// <br/><br/>
+    /// in-0(rayT): data <br/>
+    /// out-0(rayT): data<br/>
+    /// out-1(SignalRay): signal
     /// </summary>
-    /// <typeparam name="rayT"></typeparam>
     public class PassBy<rayT>:OneTwoComponent<rayT,rayT,SignalRay>
         where rayT:RayBase
     {
@@ -29,20 +32,16 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new PassBy<rayT>(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            if (inPort0.Ray == null)
+            var res = EmitRayTo(outPort0, inPort0.Ray);
+            if (res.HasResult) // Status changed
             {
-                outPort0.Ray = null;
-                outPort1.Ray = null;
-                return Status.ShutdownAndEmit;
+                var res2 = EmitSignalTo(outPort1, inPort0.Ray != null);
+                if (res2.HasResult) return Status.ShutdownAndEmit;
+                return Status.ShutdownAndEmitWith(outPort0);
             }
-            else
-            {
-                outPort0.Ray = inPort0.Ray;
-                outPort1.Ray = SignalRay.SharedSignal;
-                return Status.ShutdownAndEmit;
-            }
+            return Status.Shutdown;
         }
 
         public virtual bool InsertAfter(PortBase outport)

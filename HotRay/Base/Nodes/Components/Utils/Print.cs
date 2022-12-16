@@ -27,9 +27,9 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Print<rayT>(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            if (inport?.Ray is rayT objRay)
+            if (inPort0.Ray is rayT objRay)
             {
                 if (Newline) Console.WriteLine(objRay.ToString() ?? "");
                 else Console.Write(objRay.ToString() ?? "");

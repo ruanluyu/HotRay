@@ -13,22 +13,24 @@ namespace HotRay.Base.Nodes.Components.Utils
     {
 
 
-        protected readonly Port<rayT> inPort0 = new Port<rayT>();
-        protected Port<rayT>[] outPorts = new Port<rayT>[] { new Port<rayT>() };
+        protected readonly Port<rayT> inPort0;
+        protected Port<rayT>[] outPorts = Array.Empty<Port<rayT>>();
 
-        public Spread():base()
+        public Spread():this(2)
         {
         }
 
         public Spread(int count):base()
         {
             PortNum = count;
+            inPort0 = CreatePort<rayT>();
         }
 
 
         public Spread(Spread<rayT> other) :base(other)
         {
             PortNum = other.PortNum;
+            inPort0 = CreatePort<rayT>();
         }
 
         public int PortNum
@@ -57,7 +59,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Spread<rayT>(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
             if (PortNum == 0) return Status.Shutdown;
 

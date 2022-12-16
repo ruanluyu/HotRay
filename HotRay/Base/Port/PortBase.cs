@@ -21,37 +21,45 @@ namespace HotRay.Base.Port
         }
 
 
-        public BaseObject BaseObject
-        {
-            get
-            {
-                return this;
-            }
-        }
-
 
         public PortBase? SourcePort { get; protected set; }
 
         public PortBase? TargetPort { get; protected set; }
 
         RayBase? _ray;
-        
+        bool _changed;
+
+
+        public bool RayChangedReadOnly => _changed;
+
+        /// <summary>
+        /// This method only returns true one time if Ray changed. <br/>
+        /// i.e.:<br/>
+        /// RayChanged(); // True<br/>
+        /// RayChanged(); // False<br/>
+        /// RayChanged(); // False<br/>
+        /// ...
+        /// </summary>
+        public bool RayChanged()
+        {
+            if(_changed)
+            {
+                _changed = false;
+                return true;
+            }
+            return false;
+        }
+
 
         public virtual RayBase? Ray
         {
             set
             {
+                _changed = _ray != value;
                 _ray = value;
             }
             get
             {
-                /*if (_ray == null)
-                {
-                    if(SourcePort != null && SourcePort.Ray != null) // supports some dynamic connection in runtime. 
-                    {
-                        _ray = SourcePort.Ray.RayClone();
-                    }
-                }*/
                 return _ray;
             }
         }
@@ -62,6 +70,7 @@ namespace HotRay.Base.Port
         {
             if (TargetPort != null)
             {
+                // Log($"==[[{_ray?.ToString() ?? "null"}]]==> {TargetPort.Parent}");
                 TargetPort.Ray = _ray;
             }
         }

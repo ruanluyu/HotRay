@@ -28,9 +28,9 @@ namespace HotRay.Base.Nodes.Sources
         }
 
 
-        public override sealed Status OnPortUpdate(PortBase inport)
+        public override sealed Status OnActivated()
         {
-            return base.OnPortUpdate(inport);
+            return base.OnActivated();
         }
     }
 }

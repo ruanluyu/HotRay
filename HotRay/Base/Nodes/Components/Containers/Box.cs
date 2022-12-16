@@ -19,14 +19,6 @@ namespace HotRay.Base.Nodes.Components.Containers
         /// </summary>
         public int MaxNodePerTick { get; set; }
 
-
-
-        public struct RoutineContext
-        {
-            public RoutineType routine;
-            public NodeBase node;
-        }
-
         public Box() : base() { MaxNodePerTick = -1; }
         public Box(Box other) : base(other) 
         {
@@ -110,12 +102,21 @@ namespace HotRay.Base.Nodes.Components.Containers
             return newp;
         }
 
+        public struct RoutineContext
+        {
+            public NodeBase node;
+            public RoutineType routine;
+        }
 
 
         protected HashSet<NodeBase> nodeSet = new HashSet<NodeBase>();
-        protected Queue<RoutineContext> runThisTickRoutines = new Queue<RoutineContext>();
-        protected Queue<RoutineContext> runNextTickRoutines = new Queue<RoutineContext>();
 
+        protected HashSet<NodeBase> activatedAtNextTick = new HashSet<NodeBase>();
+        protected HashSet<NodeBase> activatedAtThisTick = new HashSet<NodeBase>();
+
+        protected LinkedList<RoutineContext> routineCached = new LinkedList<RoutineContext>();
+        protected LinkedList<RoutineContext> routineCurrent = new LinkedList<RoutineContext>();
+        
 
         /*private Queue<PortBase>? _portCache;
         private Queue<PortBase> _PortCache
@@ -207,15 +208,14 @@ namespace HotRay.Base.Nodes.Components.Containers
             return res;
         }
 
-        public virtual IEnumerable<NodeBase> GetNodesByName(string name) => nodeSet.Where(n => n.BaseObject.Name == name);
+        public virtual IEnumerable<NodeBase> GetNodesByName(string name) => nodeSet.Where(n => n.Name == name);
 
 
-        public virtual NodeBase? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.BaseObject.UID == uid).FirstOrDefault();
+        public virtual NodeBase? GetNodeByUID(UIDType uid) => nodeSet.Where(n=>n.UID == uid).FirstOrDefault();
 
 
 
 
-        HashSet<PortBase> portsHasResult = new HashSet<PortBase>();
         bool _running = false;
 
         
@@ -224,12 +224,14 @@ namespace HotRay.Base.Nodes.Components.Containers
             base.Init();
 
 
-            runThisTickRoutines.Clear();
-            runNextTickRoutines.Clear();
+            activatedAtNextTick.Clear();
+            activatedAtThisTick.Clear();
+
+            routineCached.Clear();
+            routineCurrent.Clear();
 
             _cancel = false;
             _running = false;
-            portsHasResult.Clear();
 
             foreach (var node in nodeSet)
                 node.Init();
@@ -237,50 +239,23 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        Queue<PortBase> _spreadBFS = new Queue<PortBase>();
-
-        void _SpreadPortRaysRecursively()
+        protected void SpreadPortRays(IEnumerable<PortBase> ports)
         {
-            while (_spreadBFS.TryDequeue(out var ip))
+            foreach (var port in ports)
             {
-                if (!_PassNodeLimitationCheck())
-                {
-                    _spreadBFS.Clear();
-                    return;
-                }
-                ip.SendRay();
-                if (ip.TargetPort?.BaseObject.Parent is NodeBase node)
+                port.SendRay();
+                if (port.TargetPort?.Parent is NodeBase node)
                 {
                     if (node == this)
                     {
-                        portsHasResult.Add(ip.TargetPort);
+                        continue;
                     }
                     else
                     {
-                        var status = node.OnPortUpdate(ip.TargetPort);
-                        if (status.HasResult)
-                        {
-                            IEnumerable<PortBase> targetPorts = status.PortMask ?? node.OutPorts;
-                            foreach (var op in targetPorts)
-                            {
-                                _spreadBFS.Enqueue(op);
-                            }
-                        }
-                        _doneNode++;
+                        RegisterNodeToNextTick(node);
                     }
                 }
             }
-        }
-
-
-        protected void SpreadPortRays(IEnumerable<PortBase> ports)
-        {
-            _spreadBFS.Clear();
-
-            foreach (var ip in ports)
-                _spreadBFS.Enqueue(ip);
-
-            _SpreadPortRaysRecursively();
         }
 
 
@@ -289,12 +264,17 @@ namespace HotRay.Base.Nodes.Components.Containers
             SpreadPortRays(ports as IReadOnlyList<PortBase>);
         }
 
+        void RegisterNodeToNextTick(NodeBase node)
+        {
+            activatedAtNextTick.Add(node);
+        }
+
         public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
         {
-            runThisTickRoutines.Enqueue(new RoutineContext()
+            routineCached.AddLast(new RoutineContext()
             {
-                routine = routine,
                 node = node,
+                routine = routine,
             });
         }
 
@@ -308,95 +288,114 @@ namespace HotRay.Base.Nodes.Components.Containers
                     SpreadPortRays(status.PortMask ?? source.OutPorts);
                 }
             }
-            if (runThisTickRoutines.Count > 0)
-            {
-                TurnOnRoutine();
-                if (portsHasResult.Count > 0) 
-                    return Status.ShutdownAndEmitWith(portsHasResult);
-            }
-            return Status.Shutdown;
+
+            TurnOnRoutineIfNeeded();
+
+            return Status.ShutdownAndEmitWith(outports.Where(p => p.RayChanged()));
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            SpreadPortRays(inport);
-            TurnOnRoutine();
-            var a = portsHasResult.ToArray();
-            portsHasResult.Clear();
-            return Status.ShutdownAndEmitWith(a);
+            SpreadPortRays(inports.Where(p => p.RayChanged()));
+
+            TurnOnRoutineIfNeeded();
+
+            return Status.ShutdownAndEmitWith(outports.Where(p=>p.RayChanged()));
         }
 
         
-        void TurnOnRoutine()
+        void TurnOnRoutineIfNeeded()
         {
             if (!_running)
             {
-                _running = true;
-                RunRoutine(GetRoutine());
+                if (activatedAtNextTick.Count > 0 || routineCached.Count > 0)
+                {
+                    _running = true;
+                    RunRoutine(GetRoutine());
+                }
             }
         }
 
-        int _doneNode = 0;
-        int _maxNode = -1;
 
-        bool _PassNodeLimitationCheck()
-        {
-            if(_cancel)
-            {
-                Log($"Cancellation detected, quiting ray-spread loop... ");
-                return false;
-            }
-            if (_maxNode >= 0 && _doneNode >= _maxNode)
-            {
-                Log($"Exceed limitation {_maxNode}. ");
-                return false;
-            }
-            return true;
-        }
 
         protected RoutineType GetRoutine()
         {
             try
             {
-                _maxNode = MaxNodePerTick;
-                do
+                var maxNode = MaxNodePerTick;
+                var portsToBeSpread = new Queue<PortBase>(); 
+
+                while (activatedAtNextTick.Count > 0 || routineCached.Count > 0)
                 {
-                    portsHasResult.Clear();
-                    _doneNode = 0;
-                    while (true)
+
+                    (activatedAtNextTick, activatedAtThisTick)
+                        =
+                        (activatedAtThisTick, activatedAtNextTick);
+
+                    
+
+                    if ((maxNode >= 0) && ((activatedAtThisTick.Count + routineCurrent.Count)>= maxNode))
+                    {
+                        Log($"Exceeded {nameof(MaxNodePerTick)} limitation: {MaxNodePerTick}. ");
+                        yield break;
+                    }
+
+
+                    foreach (var node in activatedAtThisTick)
                     {
                         if (_cancel)
                         {
                             Log($"Canceled running. ");
                             yield break;
                         }
-                        if(!_PassNodeLimitationCheck())
+
+                        var status = node.OnActivated();
+                        if (status.HasResult)
                         {
+                            foreach (var port in status.PortMask ?? node.OutPorts)
+                                portsToBeSpread.Enqueue(port);
+                        }
+                    }
+                    activatedAtThisTick.Clear();
+
+                    (routineCached, routineCurrent)
+                        =
+                        (routineCurrent, routineCached);
+
+                    while (routineCurrent.Count > 0)
+                    {
+                        if (_cancel)
+                        {
+                            Log($"Canceled running. ");
                             yield break;
                         }
-                        if(runThisTickRoutines.TryDequeue(out var rc))
+
+                        var rc = routineCurrent.First!.Value;
+                        routineCurrent.RemoveFirst();
+                        var routine = rc.routine;
+                        if(routine.MoveNext())
                         {
-                            if (rc.routine.MoveNext())
+                            var status = routine.Current;
+
+                            if (status.HasResult)
                             {
-                                var status = rc.routine.Current;
-                                if (status.HasResult) SpreadPortRays(rc.node.OutPorts);
-                                if (!status.Finished) runNextTickRoutines.Enqueue(rc);
+                                foreach (var port in status.PortMask ?? rc.node.OutPorts)
+                                    portsToBeSpread.Enqueue(port);
                             }
-                            _doneNode++;
+                            if (!status.Finished) routineCached.AddLast(rc);
                         }
                         else
                         {
-                            break;
+                            Log($"Routine from {rc.node} is terminated unexpected. Please use 'yield return Status.Shutdown' instead of 'yield break';");
                         }
                     }
-                    yield return Status.WaitForNextStepAndEmitWith(portsHasResult);
-                    portsHasResult.Clear();
 
-                    (runNextTickRoutines, runThisTickRoutines)
-                        =
-                        (runThisTickRoutines, runNextTickRoutines);
+                    SpreadPortRays(portsToBeSpread);
+                    portsToBeSpread.Clear();
 
-                } while (runThisTickRoutines.Count > 0);
+                    yield return Status.WaitForNextStepAndEmitWith(outports.Where(p=>p.RayChanged()));
+
+                }
             }
             finally
             {
@@ -454,5 +453,55 @@ namespace HotRay.Base.Nodes.Components.Containers
             base.Dispose(disposing);
         }
 
+
+        public string GetRayDescriptions()
+        {
+            StringBuilder sb = new StringBuilder();
+            // sb.AppendLine("Ray: ");
+            foreach (var node in nodeSet)
+            {
+                foreach (var port in node.OutPorts)
+                {
+                    if (port.RayChangedReadOnly)
+                    {
+                        sb.AppendLine($"{port.Parent} =={port.Ray?.ToString() ?? "null"}==> {port.TargetPort?.Parent}");
+                    }
+                }
+            }
+            return sb.ToString();
+        }
+
+        public string GetCachedNodeDescriptions()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("Next tick node: ");
+            foreach (var node in activatedAtNextTick)
+            {
+                sb.AppendLine(node.ToString());
+            }
+            sb.AppendLine();
+            sb.AppendLine("This tick node: ");
+            foreach (var node in activatedAtNextTick)
+            {
+                sb.AppendLine(node.ToString());
+            }
+            sb.AppendLine();
+            sb.AppendLine("Cached routine: ");
+            foreach (var rc in routineCached)
+            {
+                sb.AppendLine(rc.node.ToString());
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("Current routine: ");
+            foreach (var rc in routineCurrent)
+            {
+                sb.AppendLine(rc.node.ToString());
+            }
+
+
+            return sb.ToString();
+        }
     }
 }

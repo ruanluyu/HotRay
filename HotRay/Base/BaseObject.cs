@@ -14,14 +14,8 @@ namespace HotRay.Base
             set
             {
                 _parent = value;
-                if(_parent == null)
-                {
-                    LogEvent = null;
-                }
-                else
-                {
-                    LogEvent += _parent.Log;
-                }
+                LogEvent = null;
+                if(_parent != null) LogEvent += _parent.Log;
             }
             get => _parent;
         }

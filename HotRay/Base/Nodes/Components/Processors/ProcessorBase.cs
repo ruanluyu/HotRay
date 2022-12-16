@@ -3,6 +3,7 @@ using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -101,10 +102,8 @@ namespace HotRay.Base.Nodes.Components.Processors
             }
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            if (inport.Ray == null) return Status.Shutdown;
-            
             for (int i = 0; i < inports.Length; i++)
                 if (inports[i].Ray == null)
                     return Status.Shutdown;

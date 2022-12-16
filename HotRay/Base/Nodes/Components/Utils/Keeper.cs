@@ -23,7 +23,7 @@ namespace HotRay.Base.Nodes.Components.Utils
         
         public Keeper(Keeper<rayT> other) : base(other) { }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
             if (inPort1.Ray == null)
             {

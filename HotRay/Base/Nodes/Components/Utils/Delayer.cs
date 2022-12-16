@@ -31,30 +31,27 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Delayer<rayT>(this);
         }
 
-        public override Status OnPortUpdate(PortBase inport)
+        public override Status OnActivated()
         {
-            
-            if(Delay == 0)
+            if(inPort0.RayChanged())
             {
-                outPort0.Ray = inport.Ray;
-                return Status.ShutdownAndEmit;
-            }
-            else
-            {
-                RunRoutine(GetRoutine(inport.Ray));
+                if (Delay <= 1)
+                {
+                    return EmitRayTo(outPort0, inPort0.Ray);
+                }
+                else
+                {
+                    RunRoutine(GetRoutine(inPort0.Ray));
+                }
             }
             return Status.Shutdown;
         }
 
         IEnumerator<Status> GetRoutine(RayBase? outputRay)
         {
-            int d = Delay;
-            while (--d >= 0)
-            {
-                yield return Status.WaitForNextStep;
-            }
-            outPort0.Ray = outputRay;
-            yield return Status.ShutdownAndEmit;
+            int d = Delay - 1;
+            while (--d >= 0) yield return Status.WaitForNextStep;
+            yield return EmitRayTo(outPort0, outputRay);
         }
 
     }

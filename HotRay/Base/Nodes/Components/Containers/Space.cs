@@ -72,7 +72,11 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         void TaskCore()
         {
-            if (_running) throw new Exception("Space is running. ");
+            if (_running)
+            {
+                Log("Space is running. ");
+                return;
+            }
             _running = true;
             try
             {
@@ -88,9 +92,13 @@ namespace HotRay.Base.Nodes.Components.Containers
                     
                     try
                     {
+                        if (PrintTickInfo)  Log($"Tick {tick,7}");
                         if (routine.MoveNext())
                         {
-                            if (PrintTickInfo) Console.WriteLine($"Tick {tick} done. ");
+                            if (PrintTickInfo)
+                            {
+                                Log($"Tick {tick,7} done. \n");
+                            }
                         }
                         else
                         {
@@ -121,16 +129,12 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         IEnumerator GetSpaceRoutine()
         {
-            foreach (var source in nodeSet)
-            {
-                var status = source.OnEntry();
-                if(status.HasResult)
-                {
-                    SpreadPortRays(source.OutPorts);
-                }
-            }
+            Log("Entry...");
+            OnEntry();
+            Log("Entry done. ");
+            yield return null;
+
             var routine = GetRoutine();
-            
             while(routine.MoveNext())
             {
                 yield return null;
