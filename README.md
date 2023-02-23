@@ -5,6 +5,7 @@
 HotRay is inspired by the Redstone System in Minecraft. You can build your own programs or services by just creating and connecting nodes in HotRay. 
 
 
+
 ## Concepts
 
 There are 3 main concepts in HotRay. 
@@ -40,5 +41,9 @@ All data is represented as "Ray"s in HotRay.
 > - `DelayNode` delays ray one or more ticks. 
 
 
+
+## Quick Start
+
+Check the `HotRay/Program.cs`
 
 
