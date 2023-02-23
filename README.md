@@ -1,4 +1,4 @@
-<img src="logo.svg" width="128" >
+<img src="logo.svg" width="256" >
 
 > HotRay is an open-source node graph framewrok developed in CSharp. 
 
