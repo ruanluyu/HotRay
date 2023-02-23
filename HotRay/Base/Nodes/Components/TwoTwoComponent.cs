@@ -18,10 +18,12 @@ namespace HotRay.Base.Nodes.Components
 
         public TwoTwoComponent() : base()
         {
-            inPort0 = CreatePort<in0RayT>();
-            inPort1 = CreatePort<in1RayT>();
-            outPort0 = CreatePort<out0RayT>();
-            outPort1 = CreatePort<out1RayT>();
+            inPort0 = CreateInPort<in0RayT>();
+            inPort1 = CreateInPort<in1RayT>();
+            outPort0 = CreateOutPort<out0RayT>();
+            outPort1 = CreateOutPort<out1RayT>();
+            inPortList = new InPort[] { inPort0, inPort1 };
+            outPortList = new OutPort[] { outPort0, outPort1 };
         }
 
         public TwoTwoComponent(TwoTwoComponent<in0RayT, in1RayT, out0RayT, out1RayT> other) : base(other)
@@ -30,16 +32,18 @@ namespace HotRay.Base.Nodes.Components
             inPort1 = CreatePortFrom<in1RayT>(other.inPort1);
             outPort0 = CreatePortFrom<out0RayT>(other.outPort0);
             outPort1 = CreatePortFrom<out1RayT>(other.outPort1);
+            inPortList = new InPort[] { inPort0, inPort1 };
+            outPortList = new OutPort[] { outPort0, outPort1 };
         }
 
 
-        protected readonly Port<in0RayT> inPort0 = new Port<in0RayT>();
-        protected readonly Port<in1RayT> inPort1 = new Port<in1RayT>();
-        protected readonly Port<out0RayT> outPort0 = new Port<out0RayT>();
-        protected readonly Port<out1RayT> outPort1 = new Port<out1RayT>();
+        protected readonly InPort<in0RayT> inPort0;
+        protected readonly InPort<in1RayT> inPort1;
+        protected readonly OutPort<out0RayT> outPort0;
+        protected readonly OutPort<out1RayT> outPort1;
 
 
-        public override IReadOnlyList<PortBase> OutPorts => new PortBase[] { outPort0, outPort1 };
-        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0, inPort1 };
+        
+
     }
 }

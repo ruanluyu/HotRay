@@ -12,20 +12,18 @@ namespace HotRay.Base.Nodes.Sources
     {
         public SourceBase():base()
         {
-
+            outPortList = SharedEmptyOutPorts;
         }
 
         public SourceBase(SourceBase other): base(other)
         {
-
+            outPortList = SharedEmptyOutPorts;
         }
 
 
-
-        public override sealed IReadOnlyList<PortBase> InPorts
-        {
-            get => SharedEmptyPorts;
-        }
+        protected OutPort[] outPortList;
+        public override sealed IReadOnlyList<InPort> InPorts  => SharedEmptyInPorts;
+        public override IReadOnlyList<OutPort> OutPorts  => outPortList;
 
 
         public override sealed Status OnActivated()

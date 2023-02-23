@@ -14,19 +14,20 @@ namespace HotRay.Base.Nodes.Components
 
         public OneZeroComponent() : base()
         {
-            inPort0 = CreatePort<rayT>();
+            inPort0 = CreateInPort<rayT>();
+            inPortList = new InPort[] { inPort0 };
         }
 
         public OneZeroComponent(OneZeroComponent<rayT> other) : base(other)
         {
             inPort0 = CreatePortFrom<rayT>(other.inPort0);
+            inPortList = new InPort[] { inPort0 };
         }
 
 
-        protected readonly Port<rayT> inPort0;
+        protected readonly InPort<rayT> inPort0;
 
 
-        public override IReadOnlyList<PortBase> OutPorts => new PortBase[] {};
-        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0 };
+
     }
 }

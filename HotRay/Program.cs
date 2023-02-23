@@ -33,38 +33,44 @@ namespace HotRay
     {
         static void Main(string[] args)
         {
-            Test2();
+            Test3();
         }
 
         static void Test1()
         {
-            Space space = new Space() { TicksPerSecond = 300, PrintTickInfo = true };
+            Space space = new Space() { TicksPerSecond = 20, PrintTickInfo = false };
 
             var pulse = space.CreateNode<PulseSource>();
+            var spread = space.CreateNode<Spread<SignalRay>>();
+            var intFilter = space.CreateNode<SignalToInt>();
+            var intFilter2 = space.CreateNode<SignalToInt>();
+            var adder = space.CreateNode<ProcessorBase<AdderCore>>();
+            var print = space.CreateNode<Print<IntRay>>();
+
+
+
             pulse.Interval = 3;
             pulse.Count = 10;
+            print.Newline = true;
 
-            var delayer = space.CreateNode<Delayer<SignalRay>>();
-            pulse.OutPorts[0].ConnectTo(delayer.InPorts[0]);
+            intFilter.EmitValue = 156;
+            intFilter2.EmitValue = 687;
 
-            var intFilter = space.CreateNode<SignalToInt>();
-            delayer.OutPorts[0].ConnectTo(intFilter.InPorts[0]);
 
-            var passby = space.CreateNode<PassBy<IntRay>>();
-            intFilter.OutPorts[0].ConnectTo(passby.InPorts[0]);
 
-            var intFilter2 = space.CreateNode<SignalToInt>();
-            intFilter2.EmitValue = 5;
-            passby.OutPorts[1].ConnectTo(intFilter2.InPorts[0]);
-            
-            var adder = space.CreateNode<ProcessorBase<AdderCore>>();
-            passby.OutPorts[0].ConnectTo(adder.InPorts[0]);
+            pulse.OutPorts[0].ConnectTo(spread.InPorts[0]);
+
+            spread.OutPorts[0].ConnectTo(intFilter.InPorts[0]);
+            spread.OutPorts[1].ConnectTo(intFilter2.InPorts[0]);
+
+            intFilter.OutPorts[0].ConnectTo(adder.InPorts[0]);
             intFilter2.OutPorts[0].ConnectTo(adder.InPorts[1]);
 
-            var print = space.CreateNode<Print<IntRay>>();
-            print.Newline = true;
             adder.OutPorts[0].ConnectTo(print.InPorts[0]);
 
+
+
+            space.LogEvent += s => Console.WriteLine(s);
             space.Init();
             var task = space.RunAsync();
             task.Wait();
@@ -75,32 +81,31 @@ namespace HotRay
             Space space = new Space() 
             {
                 TicksPerSecond = 10, 
-                PrintTickInfo = false, 
+                PrintTickInfo = true, 
                 MaxNodePerTick = -1 
             };
             
 
             var pulse = space.CreateNode<PulseSource>();
+            var orgate = space.CreateNode<OrGate>();
+            var delayer = space.CreateNode<Delayer<SignalRay>>();
+            var passby = space.CreateNode<PassBy<SignalRay>>();
+            var intfilter = space.CreateNode<SignalToInt>();
+            var print = space.CreateNode<Print<IntRay>>();
+
             pulse.Interval = 2;
             pulse.Count = 2;
-
-            var orgate = space.CreateNode<OrGate>();
-            pulse.OutPorts[0].ConnectTo(orgate.InPorts[0]);
-
-            var delayer = space.CreateNode<Delayer<SignalRay>>();
             delayer.Delay = 5;
+            print.Newline = true;
+
+
+            pulse.OutPorts[0].ConnectTo(orgate.InPorts[0]);
             orgate.OutPorts[0].ConnectTo(delayer.InPorts[0]);
             delayer.OutPorts[0].ConnectTo(orgate.InPorts[1]);
-
-            var passby = space.CreateNode<PassBy<SignalRay>>();
             passby.InsertAfter(orgate.OutPorts[0]);
-
-            var intfilter = space.CreateNode<SignalToInt>();
             passby.OutPorts[1].ConnectTo(intfilter.InPorts[0]);
-
-            var print = space.CreateNode<Print<IntRay>>();
-            print.Newline = true;
             intfilter.OutPorts[0].ConnectTo(print.InPorts[0]);
+
 
 
             space.LogEvent += s => Console.WriteLine(s);
@@ -108,6 +113,11 @@ namespace HotRay
             var task = space.RunAsync();
             
             task.Wait();
+
+            if(task.IsFaulted)
+            {
+                Console.WriteLine(task.Exception?.InnerException);
+            }
         }
 
         static void Test3() // Dead lock
@@ -116,19 +126,20 @@ namespace HotRay
             {
                 TicksPerSecond = 5,
                 PrintTickInfo = true,
-                MaxNodePerTick = -1
+                MaxNodePerTick = -1,
+                MaxTick = 10
             };
-            var src = space.CreateNode<PulseSource>();
-            src.Count = 1;
-
-            var org = space.CreateNode<Merge<SignalRay>>();
-            org.PortNum = 2;
-            src.OutPorts[0].ConnectTo(org.InPorts[0]);
-
+            var pulse = space.CreateNode<PulseSource>();
+            var orgate = space.CreateNode<Merge<SignalRay>>();
             var delayer = space.CreateNode<Delayer<SignalRay>>();
-            org.OutPorts[0].ConnectTo(delayer.InPorts[0]);
 
-            delayer.OutPorts[0].ConnectTo(org.InPorts[1]); // Dead lock
+            pulse.Count = 1;
+            orgate.PortNum = 2;
+
+
+            pulse.OutPorts[0].ConnectTo(orgate.InPorts[0]);
+            orgate.OutPorts[0].ConnectTo(delayer.InPorts[0]);
+            delayer.OutPorts[0].ConnectTo(orgate.InPorts[1]); // Dead lock
 
 
             space.LogEvent += s => Console.WriteLine(s);

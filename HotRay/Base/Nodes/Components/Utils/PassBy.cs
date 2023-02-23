@@ -44,7 +44,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             return Status.Shutdown;
         }
 
-        public virtual bool InsertAfter(PortBase outport)
+        public virtual bool InsertAfter(OutPort outport)
         {
             var t = outport.TargetPort;
 

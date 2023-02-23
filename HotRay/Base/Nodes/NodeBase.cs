@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,19 +14,45 @@ namespace HotRay.Base.Nodes
     public abstract class NodeBase: BaseObject, IDisposable
     {
 
-        protected static readonly PortBase[] SharedEmptyPorts = new PortBase[0];
-        
+        protected static readonly InPort[] SharedEmptyInPorts = new InPort[0];
+        protected static readonly OutPort[] SharedEmptyOutPorts = new OutPort[0];
 
-        protected Port<rayT> CreatePort<rayT>() where rayT : RayBase
+        protected InPort CreateInPortWithType(Type rayType)
         {
-            var p = new Port<rayT>();
+            if (!rayType.IsSubclassOf(typeof(RayBase))) throw new ArgumentException("rayType");
+            var createInPortType = typeof(NodeBase).GetMethod(nameof(CreateInPort), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!;
+            return (createInPortType.MakeGenericMethod(rayType).Invoke(this, null) as InPort)!;
+        }
+        protected OutPort CreateOutPortWithType(Type rayType)
+        {
+            if (!rayType.IsSubclassOf(typeof(RayBase))) throw new ArgumentException("rayType");
+            var createOutPortType = typeof(NodeBase).GetMethod(nameof(CreateOutPort), BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!;
+            return (createOutPortType.MakeGenericMethod(rayType).Invoke(this, null) as OutPort)!;
+        }
+
+        protected InPort<rayT> CreateInPort<rayT>() where rayT : RayBase
+        {
+            var p = new InPort<rayT>();
+            p.Parent = this;
+            return p;
+        }
+        protected OutPort<rayT> CreateOutPort<rayT>() where rayT : RayBase
+        {
+            var p = new OutPort<rayT>();
             p.Parent = this;
             return p;
         }
 
-        protected Port<rayT> CreatePortFrom<rayT>(Port<rayT> other) where rayT : RayBase
+        protected InPort<rayT> CreatePortFrom<rayT>(InPort<rayT> other) where rayT : RayBase
         {
-            var p = new Port<rayT>(other);
+            var p = new InPort<rayT>(other);
+            p.Parent = this;
+            return p;
+        }
+
+        protected OutPort<rayT> CreatePortFrom<rayT>(OutPort<rayT> other) where rayT : RayBase
+        {
+            var p = new OutPort<rayT>(other);
             p.Parent = this;
             return p;
         }
@@ -50,13 +77,13 @@ namespace HotRay.Base.Nodes
         }
 
 
-        public abstract IReadOnlyList<PortBase> InPorts
+        public abstract IReadOnlyList<InPort> InPorts
         {
             get;
         }
 
 
-        public abstract IReadOnlyList<PortBase> OutPorts
+        public abstract IReadOnlyList<OutPort> OutPorts
         {
             get;
         }
@@ -65,42 +92,42 @@ namespace HotRay.Base.Nodes
         
 
 
-        private static PortBase? _GetPortByIndex(IReadOnlyList<PortBase> list, int id)
+        private static portT? _GetPortByIndex<portT>(IReadOnlyList<portT> list, int id) where portT : PortBase
         {
             if (id < 0 || id >= list.Count) return null;
             return list[id];
         }
-        private static PortBase? _GetPortByUID(IReadOnlyList<PortBase> list, UIDType uid)
+        private static portT? _GetPortByUID<portT>(IReadOnlyList<portT> list, UIDType uid) where portT : PortBase
         {
             return list.FirstOrDefault(p => p.UID == uid);
         }
 
-        private static IEnumerable<PortBase> _GetPortsByName(IReadOnlyList<PortBase> list, string name)
+        private static IEnumerable<portT> _GetPortsByName<portT>(IReadOnlyList<portT> list, string name) where portT : PortBase
         {
             return list.Where(p => p.Name == name);
         }
 
-        public virtual PortBase? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
-        public virtual PortBase? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
+        public virtual InPort? GetInPortByIndex(int id) => _GetPortByIndex(InPorts, id);
+        public virtual OutPort? GetOutPortByIndex(int id) => _GetPortByIndex(OutPorts, id);
 
-        public virtual PortBase? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
-        public virtual PortBase? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
+        public virtual InPort? GetInPortByUID(UIDType uid) => _GetPortByUID(InPorts, uid);
+        public virtual OutPort? GetOutPortByUID(UIDType uid) => _GetPortByUID(OutPorts, uid);
 
-        public virtual IEnumerable<PortBase> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
-        public virtual IEnumerable<PortBase> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
+        public virtual IEnumerable<InPort> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
+        public virtual IEnumerable<OutPort> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
 
         public virtual void ClearInConnections()
         {
             foreach (var p in InPorts)
             {
-                p.ClearConnections();
+                p?.SourcePort?.BreakConnection();
             }
         }
         public virtual void ClearOutConnections()
         {
             foreach (var p in OutPorts)
             {
-                p.ClearConnections();
+                p?.BreakConnection();
             }
         }
 
@@ -126,19 +153,19 @@ namespace HotRay.Base.Nodes
 
 
         /// <summary>
-        /// Will be called when <seealso cref="Space.Run"/>. <br/>
+        /// Will be called when <seealso cref="Space.Run"/> is called. <br/>
         /// This function will return in the same tick.  <br/><br/>
-        /// Processing more than one tick: <br/>
+        /// If your node expects more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
-        /// See also: <seealso cref="Base.Nodes.Sources.PulseSource"/>
+        /// See also: <seealso cref="Base.Nodes.Sources.PulseSource"/>. 
         /// </summary>
         /// <param name="inport"></param>
         /// <returns>
-        /// Report is this node has results and want to send them to connected nodes. <br />
+        /// Status that describes: 1. If the node have result; 2. OutPorts you want to emit. <br />
         /// Supported returns: <br />
         /// 1. <seealso cref="Status.Shutdown"/>: No result <br />
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
-        /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result <br />
+        /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result, and want to emit.  <br />
         /// </returns>
         public virtual Status OnEntry()
         {
@@ -149,19 +176,18 @@ namespace HotRay.Base.Nodes
         /// <summary>
         /// Will be called if any of the inports recieved rays. <br/>
         /// This function will be called after 1 tick the first time any in-ports' ray changed.  <br/>
-        /// This function may be called more than one times in the same tick. <br/>
-        /// This function may be called more than one times with the same in-port. <br/><br/>
+        /// This function is called only one time in the same tick. <br/>
         /// If the node has lifetime more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
         /// See also: <seealso cref="Base.Nodes.Components.Utils.Delayer{rayT}"/>
         /// </summary>
         /// <param name="inport">The inport that holds new ray data. </param>
         /// <returns>
-        /// Report is this node has results or not. <br />
+        /// Status that describes: 1. If the node have result; 2. OutPorts you want to emit. <br />
         /// Supported returns: <br />
         /// 1. <seealso cref="Status.Shutdown"/>: No result <br />
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
-        /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result <br />
+        /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result, and want to emit.  <br />
         /// </returns>
         public virtual Status OnActivated()
         {
@@ -174,6 +200,7 @@ namespace HotRay.Base.Nodes
         /// </summary>
         /// <param name="routine">
         /// It is recommanded to design your routine with yield-return-scheme. <br />
+        /// The routine registered will be immediately run at the same tick.  <br />
         /// Supported status: <br />
         /// 1. <seealso cref="Status.Shutdown"/> <br />
         /// 2. <seealso cref="Status.ShutdownAndEmit"/> <br />
@@ -185,16 +212,13 @@ namespace HotRay.Base.Nodes
         /// </param>
         protected void RunRoutine(IEnumerator<Status> routine)
         {
-            if (Parent is Box b)
-            {
-                b.RegisterRoutine(this, routine);
-            }
+            Box.GetParentBoxOf(this)?.RegisterRoutine(this, routine);
         }
 
 
 
 
-        protected static Status EmitSignalTo(Port<SignalRay> outport, bool isHigh)
+        protected static Status EmitSignalTo(OutPort<SignalRay> outport, bool isHigh)
         {
             if(isHigh)
             {
@@ -215,7 +239,7 @@ namespace HotRay.Base.Nodes
             return Status.Shutdown;
         }
 
-        protected static Status EmitRayTo(PortBase outport, RayBase? ray)
+        protected static Status EmitRayTo(OutPort outport, RayBase? ray)
         {
             if (outport.Ray != ray)
             {

@@ -13,20 +13,18 @@ namespace HotRay.Base.Nodes.Sources
     {
         public OneRaySource() : base()
         {
-            outPort0 = CreatePort<rayT>();
+            outPort0 = CreateOutPort<rayT>();
+            outPortList = new OutPort[] {outPort0 };
         }
 
         public OneRaySource(OneRaySource<rayT> other) : base(other)
         {
             outPort0 = CreatePortFrom<rayT>(other.outPort0);
+            outPortList = new OutPort[] { outPort0 };
         }
 
 
-        protected readonly Port<rayT> outPort0;
-
-
-        public override PortBase[] OutPorts => new PortBase[] { outPort0 };
-
+        protected readonly OutPort<rayT> outPort0;
 
     }
 }

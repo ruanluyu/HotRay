@@ -19,86 +19,219 @@ namespace HotRay.Base.Nodes.Components.Containers
         /// </summary>
         public int MaxNodePerTick { get; set; }
 
-        public Box() : base() { MaxNodePerTick = -1; }
+        public string? Description { get; set; }
+
+        public static Box? GetParentBoxOf(InPort port)
+        {
+            Box? parentBox = port.GetNearestParent<Box>();
+            if (parentBox == null) return null;
+            if (parentBox.inPortList.Contains(port)) return GetParentBoxOf(parentBox); // GrandParentBox
+            return parentBox;
+        }
+
+        public static Box? GetParentBoxOf(OutPort port)
+        {
+            Box? parentBox = port.GetNearestParent<Box>();
+            if (parentBox == null) return null;
+            if (parentBox.outPortList.Contains(port)) return GetParentBoxOf(parentBox); // GrandParentBox
+            return parentBox;
+        }
+
+        public static Box? GetParentBoxOf(NodeBase node)
+        { 
+            return node.GetNearestParent<Box>();
+        }
+
+        protected OutPort[] inPortInnerReflectionList;
+        protected InPort[] outPortInnerReflectionList;
+
+        public IReadOnlyList<OutPort> InPortInnerReflections => inPortInnerReflectionList;
+        public IReadOnlyList<InPort> OutPortInnerReflections => outPortInnerReflectionList;
+
+        public Box() : base() { 
+            MaxNodePerTick = -1;
+            Description = null;
+            inPortInnerReflectionList = SharedEmptyOutPorts;
+            outPortInnerReflectionList = SharedEmptyInPorts;
+        }
         public Box(Box other) : base(other) 
         {
             MaxNodePerTick = other.MaxNodePerTick;
 
-            inports = other.inports.Select(p => p.ClonePort()).ToArray();
-            outports = other.outports.Select(p => p.ClonePort()).ToArray();
+            Description = other.Description;
 
-            var old2newInMap = new Dictionary<PortBase, PortBase>();
+            inPortList = other.inPortList.Select(p => (p.ClonePort() as InPort)!).ToArray();
+            outPortList = other.outPortList.Select(p => (p.ClonePort()! as OutPort)!).ToArray();
 
-            for (int i = 0; i < outports.Length; i++)
+            inPortInnerReflectionList = SharedEmptyOutPorts;
+            outPortInnerReflectionList = SharedEmptyInPorts;
+
+            UpdateInPortReflections();
+            UpdateOutPortReflections();
+
+            var old2newOutPorts = new Dictionary<OutPort, OutPort>();
+            var old2newInPorts = new Dictionary<InPort, InPort>();
+
+            for (int i = 0; i < inPortInnerReflectionList.Length; i++)
             {
-                // We use outports here because outports of box is inports of internal. 
-                if (other.outports[i].SourcePort is PortBase) 
-                    old2newInMap[other.outports[i]] = outports[i];
+                old2newOutPorts[other.inPortInnerReflectionList[i]] = inPortInnerReflectionList[i];
             }
+
+            for (int i = 0; i < outPortInnerReflectionList.Length; i++)
+            {
+                old2newInPorts[other.outPortInnerReflectionList[i]] = outPortInnerReflectionList[i];
+            }
+
+
 
             // Pass1: clone nodes. 
             foreach (var node in other.nodeSet)
             {
                 var newnode = node.CloneNode();
                 nodeSet.Add(newnode);
-                IReadOnlyList<PortBase> oldPorts = node.InPorts!;
-                IReadOnlyList<PortBase> newPorts = newnode.InPorts!;
-                if (oldPorts.Count != newPorts.Count) continue;
-
-                for (int i = 0; i < oldPorts.Count; i++)
+                if (node.InPorts.Count == newnode.InPorts.Count)
                 {
-                    if(oldPorts[i].SourcePort is PortBase)
-                        old2newInMap[oldPorts[i]] = newPorts[i];
+                    for (int i = 0; i < node.InPorts.Count; i++)
+                    {
+                        old2newInPorts[node.InPorts[i]] = newnode.InPorts[i];
+                    }
                 }
+                if (node.OutPorts.Count == newnode.OutPorts.Count)
+                {
+                    for (int i = 0; i < node.OutPorts.Count; i++)
+                    {
+                        old2newOutPorts[node.OutPorts[i]] = newnode.OutPorts[i];
+                    }
+                }
+
             }
 
-            // Pass2: clone connections. 
-            foreach (var kv in old2newInMap)
+            // 2. Copy connections.
+            foreach (var outPortKV in old2newOutPorts)
             {
-                old2newInMap[kv.Key.SourcePort!].ConnectTo(kv.Value);
+                if (outPortKV.Key.TargetPort == null) continue;
+                outPortKV.Value.ConnectTo(old2newInPorts[outPortKV.Key.TargetPort]);
             }
         }
 
-        
+        void UpdateInPortReflections()
+        {
+            var oldList = inPortInnerReflectionList;
+            inPortInnerReflectionList = new OutPort[inPortList.Length];
+            for (int i = 0; i < inPortList.Length; i++)
+            {
+                if(i < oldList.Length && oldList[i].RayType == inPortList[i].RayType)
+                {
+                    inPortInnerReflectionList[i] = oldList[i];
+                }
+                else
+                {
+                    inPortInnerReflectionList[i] = CreateOutPortWithType(inPortList[i].RayType);
+                }
+            }
+            for (int i = inPortInnerReflectionList.Length; i < oldList.Length; i++)
+            {
+                oldList[i].BreakConnection();
+            }
+        }
+
+        void UpdateOutPortReflections()
+        {
+            var oldList = outPortInnerReflectionList;
+            outPortInnerReflectionList = new InPort[outPortList.Length];
+            for (int i = 0; i < outPortList.Length; i++)
+            {
+                if (i < oldList.Length && oldList[i].RayType == outPortList[i].RayType)
+                {
+                    outPortInnerReflectionList[i] = oldList[i];
+                }
+                else
+                {
+                    outPortInnerReflectionList[i] = CreateInPortWithType(outPortList[i].RayType);
+                }
+            }
+            for (int i = outPortInnerReflectionList.Length; i < oldList.Length; i++)
+            {
+                oldList[i].SourcePort?.BreakConnection();
+            }
+        }
+
+        public override void ClearInConnections()
+        {
+            base.ClearInConnections();
+            foreach (var node in inPortInnerReflectionList)
+            {
+                node.BreakConnection();
+            }
+        }
+
+        public override void ClearOutConnections()
+        {
+            base.ClearOutConnections();
+            foreach (var node in outPortInnerReflectionList)
+            {
+                if (node.SourcePort != null)
+                {
+                    node.SourcePort.BreakConnection();
+                }
+            }
+        }
+
+        public override void InitInPorts()
+        {
+            base.InitInPorts();
+            foreach (var p in inPortInnerReflectionList)
+            {
+                p.Ray = null;
+                p.Parent = this;
+            }
+        }
+        public override void InitOutPorts()
+        {
+            base.InitOutPorts();
+            foreach (var p in outPortInnerReflectionList)
+            {
+                p.Ray = null;
+                p.Parent = this;
+            }
+        }
 
 
-        protected PortBase[] inports = SharedEmptyPorts;
-        protected PortBase[] outports = SharedEmptyPorts;
 
-        public override IReadOnlyList<PortBase> InPorts => inports;
-
-        public override IReadOnlyList<PortBase> OutPorts => outports;
-
-        public void ResetInputPortsWith(params PortBase[] ports)
+        public void ResetInputPortsWith(params InPort[] ports)
         {
             ClearInConnections();
-            inports = ports.Length == 0 ? SharedEmptyPorts : ports;
+            inPortList = ports.Length == 0 ? SharedEmptyInPorts : ports;
+            UpdateInPortReflections();
             InitInPorts();
         }
 
-        public void ResetOutputPortsWith(params PortBase[] ports)
+        public void ResetOutputPortsWith(params OutPort[] ports)
         {
             ClearOutConnections();
-            outports = ports.Length == 0 ? SharedEmptyPorts : ports;
+            outPortList = ports.Length == 0 ? SharedEmptyOutPorts : ports;
+            UpdateOutPortReflections();
             InitOutPorts();
         }
 
         
-        public Port<rayT> AddInPort<rayT>() where rayT:RayBase
+        public InPort<rayT> AddInPort<rayT>() where rayT:RayBase
         {
-            var ips = inports.ToList();
-            var newp = new Port<rayT>();
+            var ips = inPortList.ToList();
+            var newp = CreateInPort<rayT>();
             ips.Add(newp);
-            inports = ips.ToArray();
+            inPortList = ips.ToArray();
+            UpdateInPortReflections();
             return newp;
         }
 
-        public Port<rayT> AddOutPort<rayT>() where rayT:RayBase
+        public OutPort<rayT> AddOutPort<rayT>() where rayT:RayBase
         {
-            var ips = outports.ToList();
-            var newp = new Port<rayT>();
+            var ips = outPortList.ToList();
+            var newp = CreateOutPort<rayT>();
             ips.Add(newp);
-            outports = ips.ToArray();
+            outPortList = ips.ToArray();
+            UpdateOutPortReflections();
             return newp;
         }
 
@@ -111,8 +244,8 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         protected HashSet<NodeBase> nodeSet = new HashSet<NodeBase>();
 
-        protected HashSet<NodeBase> activatedAtNextTick = new HashSet<NodeBase>();
-        protected HashSet<NodeBase> activatedAtThisTick = new HashSet<NodeBase>();
+        protected HashSet<NodeBase> NodeActiveAtNextTick = new HashSet<NodeBase>();
+        protected HashSet<NodeBase> NodeActiveAtThisTick = new HashSet<NodeBase>();
 
         protected LinkedList<RoutineContext> routineCached = new LinkedList<RoutineContext>();
         protected LinkedList<RoutineContext> routineCurrent = new LinkedList<RoutineContext>();
@@ -224,8 +357,8 @@ namespace HotRay.Base.Nodes.Components.Containers
             base.Init();
 
 
-            activatedAtNextTick.Clear();
-            activatedAtThisTick.Clear();
+            NodeActiveAtNextTick.Clear();
+            NodeActiveAtThisTick.Clear();
 
             routineCached.Clear();
             routineCurrent.Clear();
@@ -239,7 +372,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        protected void SpreadPortRays(IEnumerable<PortBase> ports)
+        protected void SpreadPortRays(IEnumerable<OutPort> ports)
         {
             foreach (var port in ports)
             {
@@ -259,14 +392,14 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        void SpreadPortRays(params PortBase[] ports)
+        void SpreadPortRays(params OutPort[] ports)
         {
-            SpreadPortRays(ports as IReadOnlyList<PortBase>);
+            SpreadPortRays(ports as IReadOnlyList<OutPort>);
         }
 
         void RegisterNodeToNextTick(NodeBase node)
         {
-            activatedAtNextTick.Add(node);
+            NodeActiveAtNextTick.Add(node);
         }
 
         public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
@@ -276,6 +409,21 @@ namespace HotRay.Base.Nodes.Components.Containers
                 node = node,
                 routine = routine,
             });
+        }
+
+        void SyncInPortReflections()
+        {
+            for (int i = 0; i < inPortInnerReflectionList.Length; i++)
+            {
+                inPortInnerReflectionList[i].Ray = inPortList[i].Ray;
+            }
+        }
+        void SyncOutPortReflections()
+        {
+            for (int i = 0; i < outPortInnerReflectionList.Length; i++)
+            {
+                outPortList[i].Ray = outPortInnerReflectionList[i].Ray;
+            }
         }
 
         public override Status OnEntry()
@@ -288,19 +436,21 @@ namespace HotRay.Base.Nodes.Components.Containers
                     SpreadPortRays(status.PortMask ?? source.OutPorts);
                 }
             }
+            SyncOutPortReflections();
 
             TurnOnRoutineIfNeeded();
-
-            return Status.ShutdownAndEmitWith(outports.Where(p => p.RayChanged()));
+            return Status.ShutdownAndEmitWith(outPortList.Where(p => p.ChangedSinceLastCheck));
         }
 
         public override Status OnActivated()
         {
-            SpreadPortRays(inports.Where(p => p.RayChanged()));
+            SyncInPortReflections();
+            SpreadPortRays(inPortInnerReflectionList.Where(p => p.ChangedSinceLastCheck));
+            SyncOutPortReflections();
 
             TurnOnRoutineIfNeeded();
 
-            return Status.ShutdownAndEmitWith(outports.Where(p=>p.RayChanged()));
+            return Status.ShutdownAndEmitWith(outPortList.Where(p=>p.ChangedSinceLastCheck));
         }
 
         
@@ -308,7 +458,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         {
             if (!_running)
             {
-                if (activatedAtNextTick.Count > 0 || routineCached.Count > 0)
+                if (NodeActiveAtNextTick.Count > 0 || routineCached.Count > 0)
                 {
                     _running = true;
                     RunRoutine(GetRoutine());
@@ -323,25 +473,25 @@ namespace HotRay.Base.Nodes.Components.Containers
             try
             {
                 var maxNode = MaxNodePerTick;
-                var portsToBeSpread = new Queue<PortBase>(); 
+                var portsToBeSpread = new HashSet<OutPort>(); 
 
-                while (activatedAtNextTick.Count > 0 || routineCached.Count > 0)
+                while (NodeActiveAtNextTick.Count > 0 || routineCached.Count > 0)
                 {
 
-                    (activatedAtNextTick, activatedAtThisTick)
+                    (NodeActiveAtNextTick, NodeActiveAtThisTick)
                         =
-                        (activatedAtThisTick, activatedAtNextTick);
+                        (NodeActiveAtThisTick, NodeActiveAtNextTick);
 
                     
 
-                    if ((maxNode >= 0) && ((activatedAtThisTick.Count + routineCurrent.Count)>= maxNode))
+                    if ((maxNode >= 0) && ((NodeActiveAtThisTick.Count + routineCurrent.Count)>= maxNode))
                     {
                         Log($"Exceeded {nameof(MaxNodePerTick)} limitation: {MaxNodePerTick}. ");
                         yield break;
                     }
 
 
-                    foreach (var node in activatedAtThisTick)
+                    foreach (var node in NodeActiveAtThisTick)
                     {
                         if (_cancel)
                         {
@@ -353,10 +503,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                         if (status.HasResult)
                         {
                             foreach (var port in status.PortMask ?? node.OutPorts)
-                                portsToBeSpread.Enqueue(port);
+                                portsToBeSpread.Add(port);
                         }
                     }
-                    activatedAtThisTick.Clear();
+                    NodeActiveAtThisTick.Clear();
 
                     (routineCached, routineCurrent)
                         =
@@ -380,7 +530,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                             if (status.HasResult)
                             {
                                 foreach (var port in status.PortMask ?? rc.node.OutPorts)
-                                    portsToBeSpread.Enqueue(port);
+                                    portsToBeSpread.Add(port);
                             }
                             if (!status.Finished) routineCached.AddLast(rc);
                         }
@@ -393,9 +543,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                     SpreadPortRays(portsToBeSpread);
                     portsToBeSpread.Clear();
 
-                    yield return Status.WaitForNextStepAndEmitWith(outports.Where(p=>p.RayChanged()));
-
+                    SyncOutPortReflections();
+                    yield return Status.WaitForNextStepAndEmitWith(outPortList.Where(p=>p.ChangedSinceLastCheck));
                 }
+                _running = false;
             }
             finally
             {
@@ -454,53 +605,29 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        public string GetRayDescriptions()
+
+        public virtual string LayoutToString()
         {
-            StringBuilder sb = new StringBuilder();
-            // sb.AppendLine("Ray: ");
-            foreach (var node in nodeSet)
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"==== {this} ====");
+            foreach (var node in nodeSet.OrderBy(e=>e.ToString()))
             {
-                foreach (var port in node.OutPorts)
+                sb.AppendLine(node.ToString());
+                
+            }
+            sb.AppendLine($"---- Connections ----");
+            foreach (var port in nodeSet.OrderBy(e => e.ToString()).SelectMany(n=>n.OutPorts))
+            {
+                if(port.TargetPort != null)
                 {
-                    if (port.RayChangedReadOnly)
-                    {
-                        sb.AppendLine($"{port.Parent} =={port.Ray?.ToString() ?? "null"}==> {port.TargetPort?.Parent}");
-                    }
+                    NodeBase parentNode = (port.Parent as NodeBase)!;
+                    NodeBase tparentNode = (port.TargetPort.Parent as NodeBase)!;
+
+                    sb.AppendLine($"{parentNode} {parentNode.OutPorts.ToList().IndexOf(port)} ---> {tparentNode} {tparentNode.InPorts.ToList().IndexOf(port.TargetPort)}");
                 }
             }
-            return sb.ToString();
-        }
-
-        public string GetCachedNodeDescriptions()
-        {
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine("Next tick node: ");
-            foreach (var node in activatedAtNextTick)
-            {
-                sb.AppendLine(node.ToString());
-            }
-            sb.AppendLine();
-            sb.AppendLine("This tick node: ");
-            foreach (var node in activatedAtNextTick)
-            {
-                sb.AppendLine(node.ToString());
-            }
-            sb.AppendLine();
-            sb.AppendLine("Cached routine: ");
-            foreach (var rc in routineCached)
-            {
-                sb.AppendLine(rc.node.ToString());
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("Current routine: ");
-            foreach (var rc in routineCurrent)
-            {
-                sb.AppendLine(rc.node.ToString());
-            }
-
-
+            sb.AppendLine($"==== {this} end=");
             return sb.ToString();
         }
     }

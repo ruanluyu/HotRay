@@ -13,8 +13,7 @@ namespace HotRay.Base.Nodes.Components.Utils
     {
 
 
-        protected readonly Port<rayT> inPort0;
-        protected Port<rayT>[] outPorts = Array.Empty<Port<rayT>>();
+        protected readonly InPort<rayT> inPort0;
 
         public Spread():this(2)
         {
@@ -22,37 +21,33 @@ namespace HotRay.Base.Nodes.Components.Utils
 
         public Spread(int count):base()
         {
+            inPort0 = CreateInPort<rayT>();
+            inPortList = new InPort[] { inPort0 };
             PortNum = count;
-            inPort0 = CreatePort<rayT>();
         }
 
 
         public Spread(Spread<rayT> other) :base(other)
         {
+            inPort0 = CreateInPort<rayT>();
+            inPortList = new InPort[] { inPort0 };
             PortNum = other.PortNum;
-            inPort0 = CreatePort<rayT>();
         }
 
         public int PortNum
         {
-            get => outPorts.Length;
+            get => outPortList.Length;
             set
             {
-                if (value < 0) PortNum = 0;
-
-                if (outPorts.Length == value) return;
-
-                outPorts = new Port<rayT>[value];
-                for (int i = 0; i < value; i++)
+                if (value < 0) 
                 {
-                    outPorts[i] = new Port<rayT>();
+                    PortNum = 0;
+                    return;
                 }
+                ResetOutPortNum<rayT>(value);
             }
         }
 
-        public override IReadOnlyList<PortBase> InPorts => new PortBase[] { inPort0 };
-
-        public override IReadOnlyList<PortBase> OutPorts => outPorts;
 
         public override NodeBase CloneNode()
         {
@@ -66,11 +61,11 @@ namespace HotRay.Base.Nodes.Components.Utils
 
             var refRay = inPort0.Ray;
             // inPort0.Ray = null;
-            if (refRay == outPorts[0].Ray) return Status.Shutdown;
+            if (refRay == outPortList[0].Ray) return Status.Shutdown;
 
-            outPorts[0].Ray = refRay;
-            for (int i = 1; i < outPorts.Length; i++)
-                outPorts[i].Ray = refRay?.RayClone();
+            outPortList[0].Ray = refRay;
+            for (int i = 1; i < outPortList.Length; i++)
+                outPortList[i].Ray = refRay?.RayClone();
 
             return Status.ShutdownAndEmit;
         }

@@ -10,45 +10,41 @@ namespace HotRay.Base.Nodes.Components.Utils
 {
     public class Merge<rayT>:ComponentBase where rayT:RayBase
     {
-        protected Port<rayT>[] inPorts = Array.Empty<Port<rayT>>();
-        protected readonly Port<rayT> outPort0;
+        protected readonly OutPort<rayT> outPort0;
 
         public Merge() : this(2)
         {
+
         }
 
         public Merge(int count) : base()
         {
+            outPort0 = CreateOutPort<rayT>();
             PortNum = count;
-            outPort0 = CreatePort<rayT>();
+            outPortList = new OutPort[] { outPort0 };
         }
 
 
         public Merge(Merge<rayT> other) : base(other)
         {
+            outPort0 = CreateOutPort<rayT>();
             PortNum = other.PortNum;
-            outPort0 = CreatePort<rayT>();
+            outPortList = new OutPort[] { outPort0 };
         }
 
         public int PortNum
         {
-            get => inPorts.Length;
+            get => inPortList.Length;
             set
             {
-                if (value < 0) PortNum = 0;
-
-                if (inPorts.Length == value) return;
-
-                inPorts = new Port<rayT>[value];
-                for (int i = 0; i < value; i++)
+                if (value < 0)
                 {
-                    inPorts[i] = CreatePort<rayT>();
+                    PortNum = 0;
+                    return;
                 }
+                ResetInPortNum<rayT>(value);
             }
         }
-        public override IReadOnlyList<PortBase> OutPorts => new PortBase[] { outPort0 };
-
-        public override IReadOnlyList<PortBase> InPorts => inPorts;
 
         public override NodeBase CloneNode()
         {
@@ -59,10 +55,15 @@ namespace HotRay.Base.Nodes.Components.Utils
         public override Status OnActivated()
         {
             if (PortNum == 0) return Status.Shutdown;
-            foreach (var port in inPorts)
+            for (int i = 0; i < inPortList.Length; i++)
             {
-                if(port.RayChanged() && port.Ray != null)
+                var port = inPortList[i];
+                if (port.ChangedSinceLastCheck && port.Ray != null)
                 {
+                    for (int j = i + 1; j < inPortList.Length; j++)
+                    {
+                        port.ResetChanged();
+                    }
                     return EmitRayTo(outPort0, port.Ray);
                 }
             }

@@ -33,7 +33,7 @@ namespace HotRay.Base.Nodes.Components.Utils
 
         public override Status OnActivated()
         {
-            if(inPort0.RayChanged())
+            if(inPort0.ChangedSinceLastCheck)
             {
                 if (Delay <= 1)
                 {

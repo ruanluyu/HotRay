@@ -12,10 +12,16 @@ namespace HotRay.Base.Nodes.Components.Containers
 {
     public class Space:Box
     {
-        public Space():base() { }
+        public Space():base() 
+        {
+            TicksPerSecond = 10;
+            MaxTick = -1;
+            PrintTickInfo = false;
+        }
         public Space(Space other):base(other) 
         {
             TicksPerSecond = other.TicksPerSecond;
+            MaxTick = other.MaxTick;
             PrintTickInfo = other.PrintTickInfo;
         }
 
@@ -28,6 +34,14 @@ namespace HotRay.Base.Nodes.Components.Containers
         {
             get;set;
         }
+        /// <summary>
+        /// -1: No limitation.
+        /// </summary>
+        public int MaxTick
+        {
+            get;set;
+        }
+
         public bool PrintTickInfo
         {
             get;set;
@@ -70,6 +84,12 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public void Run() => TaskCore();
 
+        bool ReachedMaxTick(int curTick)
+        {
+            if (MaxTick < 0) return false;
+            return curTick >= MaxTick;
+        }
+
         void TaskCore()
         {
             if (_running)
@@ -102,6 +122,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                         }
                         else
                         {
+                            if (PrintTickInfo)
+                            {
+                                Log($"Tick {tick,7} done. Terminate signal detected. \n");
+                            }
                             break;
                         }
                     }
@@ -109,7 +133,16 @@ namespace HotRay.Base.Nodes.Components.Containers
                     {
                         Log($"Error: {e.Message}");
                     }
+
+                    if (ReachedMaxTick(tick))
+                    {
+                        if(PrintTickInfo) 
+                            Log($"Reached max tick {MaxTick}. Terminating... \n");
+                        break;
+                    }
+
                     ++tick;
+
                     double waitTime = (tick * 1000 / tps) 
                         - ((int)(Environment.TickCount64- startMs));
 

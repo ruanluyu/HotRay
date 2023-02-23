@@ -20,7 +20,7 @@ namespace HotRay.Base
             get => _parent;
         }
 
-        public struct UIDType
+        public struct UIDType : IComparable
         {
             static ulong counter = 1;
             ulong uid;
@@ -46,6 +46,13 @@ namespace HotRay.Base
             public override string ToString()
             {
                 return uid.ToString();
+            }
+
+            public int CompareTo(object? obj)
+            {
+                if(obj is UIDType uidobj)
+                    return uid.CompareTo(uidobj.uid);
+                return -1;
             }
         }
 
@@ -89,7 +96,38 @@ namespace HotRay.Base
         }
 
 
-        
+
+        public virtual T? GetNearestParent<T>(int skipCounter = 0) where T:BaseObject
+        {
+            BaseObject? curParent = Parent;
+            while(curParent != null)
+            {
+                if (curParent is T b)
+                {
+                    if(skipCounter <= 0) 
+                        return b;
+                    skipCounter--;
+                }
+                curParent = curParent.Parent;
+            }
+            return null;
+        }
+
+        public string UIDPath
+        {
+            get
+            {
+                Stack<string> pathRecord = new Stack<string>();
+                pathRecord.Push(UID.ToString());
+                BaseObject? curParent = Parent;
+                while (curParent != null)
+                {
+                    pathRecord.Push(curParent.UID.ToString());
+                    curParent = curParent.Parent;
+                }
+                return string.Join("/",pathRecord);
+            }
+        }
 
     }
 }
