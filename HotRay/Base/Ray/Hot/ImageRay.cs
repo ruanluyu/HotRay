@@ -48,14 +48,5 @@ namespace HotRay.Base.Ray.Hot
             return new ImageRay<colorT>(this);
         }
 
-        public static ImageRay<byte> LoadRGBA256ImageFromPath(string? path)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool SaveRGBA256ImageFromPath(string? path, bool forceOverride = false)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -11,6 +11,7 @@ namespace HotRay.Base.Ray.Lite
         public BoolRay() : base() { }
         public BoolRay(BoolRay other) : base(other) { }
 
+
         public override RayBase RayClone()
         {
             return new BoolRay(this);

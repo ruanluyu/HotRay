@@ -21,6 +21,8 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public string? Description { get; set; }
 
+        
+        
         public static Box? GetParentBoxOf(InPort port)
         {
             Box? parentBox = port.GetNearestParent<Box>();
@@ -56,12 +58,25 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
         public Box(Box other) : base(other) 
         {
+            if (Parent is Box b)
+            {
+                b.nodeSet.Add(this);
+            }
+
             MaxNodePerTick = other.MaxNodePerTick;
 
             Description = other.Description;
 
-            inPortList = other.inPortList.Select(p => (p.ClonePort() as InPort)!).ToArray();
-            outPortList = other.outPortList.Select(p => (p.ClonePort()! as OutPort)!).ToArray();
+            inPortList = other.inPortList.Select(p => {
+                var cp = (p.ClonePort() as InPort)!;
+                cp.Parent = this;
+                return cp;
+                }).ToArray();
+            outPortList = other.outPortList.Select(p => {
+                var cp = (p.ClonePort() as OutPort)!;
+                cp.Parent = this;
+                return cp;
+            }).ToArray();
 
             inPortInnerReflectionList = SharedEmptyOutPorts;
             outPortInnerReflectionList = SharedEmptyInPorts;
@@ -88,6 +103,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             foreach (var node in other.nodeSet)
             {
                 var newnode = node.CloneNode();
+                newnode.Parent = this;
                 nodeSet.Add(newnode);
                 if (node.InPorts.Count == newnode.InPorts.Count)
                 {
@@ -112,6 +128,9 @@ namespace HotRay.Base.Nodes.Components.Containers
                 if (outPortKV.Key.TargetPort == null) continue;
                 outPortKV.Value.ConnectTo(old2newInPorts[outPortKV.Key.TargetPort]);
             }
+
+
+
         }
 
         void UpdateInPortReflections()
@@ -214,8 +233,9 @@ namespace HotRay.Base.Nodes.Components.Containers
             InitOutPorts();
         }
 
-        
-        public InPort<rayT> AddInPort<rayT>() where rayT:RayBase
+
+
+        public InPort<rayT> AddInPort<rayT>() where rayT : RayBase
         {
             var ips = inPortList.ToList();
             var newp = CreateInPort<rayT>();
@@ -225,7 +245,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             return newp;
         }
 
-        public OutPort<rayT> AddOutPort<rayT>() where rayT:RayBase
+        public OutPort<rayT> AddOutPort<rayT>() where rayT : RayBase
         {
             var ips = outPortList.ToList();
             var newp = CreateOutPort<rayT>();
@@ -461,14 +481,14 @@ namespace HotRay.Base.Nodes.Components.Containers
                 if (NodeActiveAtNextTick.Count > 0 || routineCached.Count > 0)
                 {
                     _running = true;
-                    RunRoutine(GetRoutine());
+                    RunRoutine(GetBoxRoutine());
                 }
             }
         }
 
 
 
-        protected RoutineType GetRoutine()
+        protected RoutineType GetBoxRoutine()
         {
             try
             {
@@ -487,7 +507,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                     if ((maxNode >= 0) && ((NodeActiveAtThisTick.Count + routineCurrent.Count)>= maxNode))
                     {
                         Log($"Exceeded {nameof(MaxNodePerTick)} limitation: {MaxNodePerTick}. ");
-                        yield break;
+                        yield return Status.Shutdown;
                     }
 
 
@@ -496,7 +516,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                         if (_cancel)
                         {
                             Log($"Canceled running. ");
-                            yield break;
+                            yield return Status.Shutdown;
                         }
 
                         var status = node.OnActivated();
@@ -517,7 +537,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                         if (_cancel)
                         {
                             Log($"Canceled running. ");
-                            yield break;
+                            yield return Status.Shutdown;
                         }
 
                         var rc = routineCurrent.First!.Value;
@@ -552,6 +572,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             {
                 _running = false;
             }
+            yield return Status.Shutdown;
         }
 
         public virtual IEnumerator<NodeBase> GetNodeEnumerator(int? remainDepth = 8, HashSet<Box>? searchedBox = null)
@@ -613,11 +634,17 @@ namespace HotRay.Base.Nodes.Components.Containers
             sb.AppendLine($"==== {this} ====");
             foreach (var node in nodeSet.OrderBy(e=>e.ToString()))
             {
-                sb.AppendLine(node.ToString());
-                
+                if(node is Box bnode)
+                {
+                    sb.AppendLine(string.Join("\n",bnode.LayoutToString().Split("\n").Select(l=>$"  {l}")));
+                }
+                else
+                {
+                    sb.AppendLine(node.ToString());
+                }
             }
             sb.AppendLine($"---- Connections ----");
-            foreach (var port in nodeSet.OrderBy(e => e.ToString()).SelectMany(n=>n.OutPorts))
+            foreach (var port in nodeSet.OrderBy(e => e.ToString()).SelectMany(n=>n.OutPorts).Concat(inPortInnerReflectionList))
             {
                 if(port.TargetPort != null)
                 {

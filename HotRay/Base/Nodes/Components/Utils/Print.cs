@@ -11,7 +11,10 @@ namespace HotRay.Base.Nodes.Components.Utils
 {
     public class Print<rayT>:OneZeroComponent<rayT> where rayT:RayBase
     {
-        public Print() : base() { }
+        public Print() : base() 
+        {
+            Newline = true;
+        }
         public Print(Print<rayT> other) : base(other) 
         {
             Newline = other.Newline;

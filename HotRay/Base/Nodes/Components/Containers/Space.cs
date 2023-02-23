@@ -12,6 +12,9 @@ namespace HotRay.Base.Nodes.Components.Containers
 {
     public class Space:Box
     {
+
+
+
         public Space():base() 
         {
             TicksPerSecond = 10;
@@ -45,6 +48,21 @@ namespace HotRay.Base.Nodes.Components.Containers
         public bool PrintTickInfo
         {
             get;set;
+        }
+
+
+        HttpClient? _httpClient = null;
+        public HttpClient HttpClient
+        {
+            get
+            {
+                if (_httpClient == null) _httpClient = new HttpClient();
+                return _httpClient;
+            }
+            set
+            {
+                _httpClient = value;
+            }
         }
 
         bool _running = false;
@@ -167,9 +185,14 @@ namespace HotRay.Base.Nodes.Components.Containers
             Log("Entry done. ");
             yield return null;
 
-            var routine = GetRoutine();
+            var routine = GetBoxRoutine();
             while(routine.MoveNext())
             {
+                var status = routine.Current;
+                if(status.Finished)
+                {
+                    yield break;
+                }
                 yield return null;
             }
         }

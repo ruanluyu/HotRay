@@ -23,7 +23,7 @@ namespace HotRay.Base.Ray.Hot
 
         public TensorRay(TensorRay<numberT> other):base(other)
         {
-            Dims = Dims == sharedEmptyDims ? Dims : Dims!.ToArray();
+            Dims = (other.Dims == sharedEmptyDims) ? sharedEmptyDims : other.Dims!.ToArray();
         }
 
         protected virtual void _Reshape(params uint[] dims)

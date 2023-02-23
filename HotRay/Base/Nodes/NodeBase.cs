@@ -13,6 +13,19 @@ namespace HotRay.Base.Nodes
 {
     public abstract class NodeBase: BaseObject, IDisposable
     {
+        Dictionary<string, string>? _extraInfo = null;
+        public Dictionary<string, string> ExtraInfo 
+        {
+            get
+            {
+                if (_extraInfo == null) _extraInfo = new Dictionary<string, string>();
+                return _extraInfo;
+            }
+            set
+            {
+                _extraInfo = value;
+            }
+        }
 
         protected static readonly InPort[] SharedEmptyInPorts = new InPort[0];
         protected static readonly OutPort[] SharedEmptyOutPorts = new OutPort[0];
@@ -61,12 +74,19 @@ namespace HotRay.Base.Nodes
 
         public NodeBase() : base()
         {
-            
+            _extraInfo = null;
         }
 
         public NodeBase(NodeBase other): base(other)
         {
-
+            if(other._extraInfo == null)
+            {
+                _extraInfo = null;
+            }
+            else
+            {
+                _extraInfo = other._extraInfo.ToDictionary(kv=>kv.Key, kv=>kv.Value);
+            }
         }
 
 
@@ -115,6 +135,8 @@ namespace HotRay.Base.Nodes
 
         public virtual IEnumerable<InPort> GetInPortsByName(string name) => _GetPortsByName(InPorts, name);
         public virtual IEnumerable<OutPort> GetOutPortsByName(string name) => _GetPortsByName(OutPorts, name);
+
+
 
         public virtual void ClearInConnections()
         {
@@ -280,6 +302,31 @@ namespace HotRay.Base.Nodes
             // 不要更改此代码。请将清理代码放入“Dispose(bool disposing)”方法中
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+
+
+        public string? QueryExtraInfo(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            NodeBase? curNode = this;
+            string? res;
+            while(curNode != null)
+            {
+                if(curNode._extraInfo != null && curNode._extraInfo.TryGetValue(key, out res))
+                {
+                    return res;
+                }
+                if(curNode.Parent is NodeBase p)
+                {
+                    curNode = p;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            return null;
         }
     }
 }

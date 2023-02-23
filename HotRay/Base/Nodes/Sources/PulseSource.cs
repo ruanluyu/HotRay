@@ -34,7 +34,9 @@ namespace HotRay.Base.Nodes.Sources
         }
 
         /// <summary>
-        /// >0: Emission limit exists; otherwise: No emission limit. 
+        /// >0: Emission limit exists; <br/> 
+        /// 0: Turn off; <br/>
+        /// -1: No emission limit. 
         /// </summary>
         public int Count
         {
@@ -42,11 +44,12 @@ namespace HotRay.Base.Nodes.Sources
         }
 
         /// <summary>
-        /// >0: Interval exists, otherwise: No interval. 
+        /// >0: Intervals exist; <br/>
+        /// otherwise: No interval. 
         /// </summary>
         public int Interval
         {
-            get;set;
+            get; set;
         }
 
         public override NodeBase CloneNode()
