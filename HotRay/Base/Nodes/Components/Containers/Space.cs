@@ -65,27 +65,37 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        bool _running = false;
-        public bool Running => _running;
 
+
+        Task? runTask = null;
+        public bool Running => runTask != null;
+
+        CancellationTokenSource? cancellationSource;
+        public CancellationToken cancellationToken;
 
         public Task RunAsync()
         {
-            var cancelSrc = new CancellationTokenSource();
-            var ctoken = cancelSrc.Token;
+            if (Running)
+            {
+                Log("Space is running. ");
+                return runTask!;
+            }
 
-            var task = Task.Run(TaskCore, ctoken);
+            cancellationSource = new CancellationTokenSource();
+            cancellationToken = cancellationSource.Token;
+
+            runTask = Task.Run(TaskCore, cancellationToken);
             
             Console.CancelKeyPress += (obj, arg) =>
             {
                 try
                 {
-                    var timeout = 3.0 / TicksPerSecond;
-                    Log($"Detected cancel event {arg.SpecialKey}. Trying cancel task in {timeout:F2} [sec]...");
-                    SendCancelSignal();
-                    if (!task.Wait(TimeSpan.FromSeconds(timeout)))
+                    var timeoutTicks = 3.0f;
+                    Log($"Detected cancel event {arg.SpecialKey}. Trying cancel task in {timeoutTicks:F2} [ticks]...");
+                    var task = Task.Run(() => CancelAsync(timeoutTicks));
+                    if(task.IsFaulted)
                     {
-                        cancelSrc.Cancel();
+                        throw task.Exception ?? new Exception("Unknown");
                     }
                 }
                 catch(Exception e)
@@ -97,10 +107,38 @@ namespace HotRay.Base.Nodes.Components.Containers
                     arg.Cancel = true;
                 }
             };
-            return task;
+            
+            return runTask;
         }
 
-        public void Run() => TaskCore();
+
+        public async Task CancelAsync(float timeoutTicks = 3.0f)
+        {
+            if (cancellationSource == null) return;
+            if (runTask == null) return;
+            try
+            {
+                cancellationSource.Cancel();
+                var timeout = timeoutTicks / TicksPerSecond;
+
+                cancellationSource.Cancel();
+                await runTask.WaitAsync(TimeSpan.FromSeconds(timeout));
+                if (runTask.IsCompleted)
+                {
+                    
+                }
+                else
+                {
+                    Log($"Failed to cancel task in {timeoutTicks} [ticks]. ");
+                }
+            }
+            finally
+            {
+                cancellationSource.Dispose();
+                runTask = null;
+            }
+        }
+
 
         bool ReachedMaxTick(int curTick)
         {
@@ -110,12 +148,6 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         void TaskCore()
         {
-            if (_running)
-            {
-                Log("Space is running. ");
-                return;
-            }
-            _running = true;
             try
             {
                 var routine = GetSpaceRoutine();
@@ -130,6 +162,12 @@ namespace HotRay.Base.Nodes.Components.Containers
                     
                     try
                     {
+                        if (cancellationToken.IsCancellationRequested)
+                        {
+                            if(PrintTickInfo)
+                                Log($"Cancelled at tick: {tick, 7}");
+                            break;
+                        }
                         if (PrintTickInfo)  Log($"Tick {tick,7}");
                         if (routine.MoveNext())
                         {
@@ -174,7 +212,6 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
             finally
             {
-                _running = false;
             }
         }
 
@@ -188,6 +225,10 @@ namespace HotRay.Base.Nodes.Components.Containers
             var routine = GetBoxRoutine();
             while(routine.MoveNext())
             {
+                if(cancellationToken.IsCancellationRequested)
+                {
+                    yield break;
+                }
                 var status = routine.Current;
                 if(status.Finished)
                 {

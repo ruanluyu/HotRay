@@ -129,5 +129,12 @@ namespace HotRay.Base
             }
         }
 
+
+        public Space? GetCurrentSpace()
+        {
+            if (this is Space s) return s;
+            return GetNearestParent<Space>();
+        }
+
     }
 }

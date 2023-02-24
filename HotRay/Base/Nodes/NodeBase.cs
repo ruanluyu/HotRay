@@ -175,7 +175,7 @@ namespace HotRay.Base.Nodes
 
 
         /// <summary>
-        /// Will be called when <seealso cref="Space.Run"/> is called. <br/>
+        /// Will be called when <seealso cref="Space.RunAsync"/> is called. <br/>
         /// This function will return in the same tick.  <br/><br/>
         /// If your node expects more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
@@ -303,7 +303,6 @@ namespace HotRay.Base.Nodes
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
-
 
 
         public string? QueryExtraInfo(string key)

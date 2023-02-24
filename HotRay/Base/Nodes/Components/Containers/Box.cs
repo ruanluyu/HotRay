@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -22,6 +23,8 @@ namespace HotRay.Base.Nodes.Components.Containers
         public string? Description { get; set; }
 
         
+        
+
         
         public static Box? GetParentBoxOf(InPort port)
         {
@@ -383,7 +386,6 @@ namespace HotRay.Base.Nodes.Components.Containers
             routineCached.Clear();
             routineCurrent.Clear();
 
-            _cancel = false;
             _running = false;
 
             foreach (var node in nodeSet)
@@ -419,16 +421,18 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         void RegisterNodeToNextTick(NodeBase node)
         {
-            NodeActiveAtNextTick.Add(node);
+            lock(NodeActiveAtNextTick)
+                NodeActiveAtNextTick.Add(node);
         }
 
         public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
         {
-            routineCached.AddLast(new RoutineContext()
-            {
-                node = node,
-                routine = routine,
-            });
+            lock(routineCached)
+                routineCached.AddLast(new RoutineContext()
+                {
+                    node = node,
+                    routine = routine,
+                });
         }
 
         void SyncInPortReflections()
@@ -493,10 +497,15 @@ namespace HotRay.Base.Nodes.Components.Containers
             try
             {
                 var maxNode = MaxNodePerTick;
-                var portsToBeSpread = new HashSet<OutPort>(); 
+                var portsToBeSpread = new HashSet<OutPort>();
+                var currentSpace = GetCurrentSpace()!;
+                var cancelToken = currentSpace.cancellationToken;
+
+                if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
                 while (NodeActiveAtNextTick.Count > 0 || routineCached.Count > 0)
                 {
+                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
                     (NodeActiveAtNextTick, NodeActiveAtThisTick)
                         =
@@ -511,54 +520,55 @@ namespace HotRay.Base.Nodes.Components.Containers
                     }
 
 
-                    foreach (var node in NodeActiveAtThisTick)
+                    Task[] activeTasks = NodeActiveAtThisTick.Select(node => Task.Run(() =>
                     {
-                        if (_cancel)
-                        {
-                            Log($"Canceled running. ");
-                            yield return Status.Shutdown;
-                        }
-
                         var status = node.OnActivated();
                         if (status.HasResult)
                         {
-                            foreach (var port in status.PortMask ?? node.OutPorts)
-                                portsToBeSpread.Add(port);
+                            lock (portsToBeSpread)
+                                foreach (var port in status.PortMask ?? node.OutPorts)
+                                {
+                                        portsToBeSpread.Add(port);
+                                }
                         }
-                    }
+                    }, cancelToken)).ToArray();
+                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
+                    Task.WaitAll(activeTasks);
+                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
                     NodeActiveAtThisTick.Clear();
 
                     (routineCached, routineCurrent)
                         =
                         (routineCurrent, routineCached);
 
-                    while (routineCurrent.Count > 0)
-                    {
-                        if (_cancel)
-                        {
-                            Log($"Canceled running. ");
-                            yield return Status.Shutdown;
-                        }
 
-                        var rc = routineCurrent.First!.Value;
-                        routineCurrent.RemoveFirst();
+                    Task[] routineTasks = routineCurrent.Select(rc => Task.Run(() =>
+                    {
                         var routine = rc.routine;
-                        if(routine.MoveNext())
+                        if (routine.MoveNext())
                         {
                             var status = routine.Current;
 
                             if (status.HasResult)
                             {
-                                foreach (var port in status.PortMask ?? rc.node.OutPorts)
-                                    portsToBeSpread.Add(port);
+                                lock(portsToBeSpread)
+                                    foreach (var port in status.PortMask ?? rc.node.OutPorts)
+                                        portsToBeSpread.Add(port);
                             }
-                            if (!status.Finished) routineCached.AddLast(rc);
+                            if (!status.Finished)
+                            {
+                                RegisterRoutine(rc.node, rc.routine);
+                            }
                         }
                         else
                         {
                             Log($"Routine from {rc.node} is terminated unexpected. Please use 'yield return Status.Shutdown' instead of 'yield break';");
                         }
-                    }
+                    }, cancelToken)).ToArray();
+                    routineCurrent.Clear();
+
+                    Task.WaitAll(routineTasks);
+                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
                     SpreadPortRays(portsToBeSpread);
                     portsToBeSpread.Clear();
@@ -599,12 +609,6 @@ namespace HotRay.Base.Nodes.Components.Containers
             return new Box(this);
         }
 
-
-        bool _cancel = false;
-        public void SendCancelSignal()
-        {
-            _cancel = true;
-        }
 
 
         private bool disposedValue;
