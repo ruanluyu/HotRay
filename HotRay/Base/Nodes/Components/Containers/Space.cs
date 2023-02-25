@@ -51,19 +51,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        HttpClient? _httpClient = null;
-        public HttpClient HttpClient
-        {
-            get
-            {
-                if (_httpClient == null) _httpClient = new HttpClient();
-                return _httpClient;
-            }
-            set
-            {
-                _httpClient = value;
-            }
-        }
+        
 
 
 

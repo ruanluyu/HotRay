@@ -46,7 +46,7 @@ namespace HotRay.Base.Nodes.Components.Filters
             }
         }
 
-
+        
         ImageRGBA8888Ray? Load()
         {
             if (string.IsNullOrEmpty(ImagePath)) return null;
@@ -56,25 +56,22 @@ namespace HotRay.Base.Nodes.Components.Filters
 
             if (ImagePath.StartsWith("http"))
             {
-                var space = GetNearestParent<Space>();
-                if(space != null)
+                var httpClient = HttpClient;
+
+                var downloadTask = Task.Run(async () =>
                 {
-                    var httpClient = space.HttpClient;
-
-                    var downloadTask = Task.Run(async () =>
+                    using (Stream stream = await httpClient.GetStreamAsync(ImagePath))
+                    using (MemoryStream memStream = new MemoryStream())
                     {
-                        using (Stream stream = await httpClient.GetStreamAsync(ImagePath))
-                        using (MemoryStream memStream = new MemoryStream())
-                        {
-                            await stream.CopyToAsync(memStream);
-                            memStream.Seek(0, SeekOrigin.Begin);
+                        await stream.CopyToAsync(memStream);
+                        memStream.Seek(0, SeekOrigin.Begin);
 
-                            return SKBitmap.Decode(memStream);
-                        };
-                    });
-                    downloadTask.Wait();
-                    bitmap = downloadTask.Result;
-                }
+                        return SKBitmap.Decode(memStream);
+                    };
+
+                });
+                downloadTask.Wait();
+                bitmap = downloadTask.Result;
             }
             else
             {
