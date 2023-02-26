@@ -217,6 +217,11 @@ namespace HotRay.Base.Nodes
         }
 
 
+        protected void ActivateMeNextTick()
+        {
+            if(Parent is Box b) b.RegisterNodeToNextTick(this);
+        }
+
 
 
         protected static Status EmitSignalTo(OutPort<SignalRay> outport, bool isHigh)

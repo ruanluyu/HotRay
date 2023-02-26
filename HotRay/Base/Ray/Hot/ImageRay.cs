@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 namespace HotRay.Base.Ray.Hot
 {
 
-    public class ImageRay<colorT> : MemoryRay<colorT>
-        where colorT:struct
+    public class ImageRay<channelT> : MemoryRay<channelT>
+        where channelT:struct
     {
 
         public ImageRay() : base() 
@@ -19,7 +19,7 @@ namespace HotRay.Base.Ray.Hot
             channels = 4; 
         }
 
-        public ImageRay(ImageRay<colorT> other) : base(other) 
+        public ImageRay(ImageRay<channelT> other) : base(other) 
         {
             width = other.width;
             height = other.height;
@@ -42,19 +42,27 @@ namespace HotRay.Base.Ray.Hot
         public virtual int Height => Empty ? 0 : height;
         public virtual int Channels => Empty ? 0 : channels;
 
-        public virtual colorT Get(int x, int y, int channelID)
+        public virtual channelT Get(int x, int y, int channelID)
         {
             if (Data == null) return default;
             return Data[(y * width + x)* channels + channelID];
         }
 
-        public virtual void Set(int x, int y, int channelID, colorT c)
+        public virtual void Set(int x, int y, int channelID, channelT c)
         {
             if (Data == null) return;
             Data[(y * width + x) * channels + channelID] = c;
         }
 
-        public virtual void Set(int width, int height, int channels, colorT[] data)
+        /// <summary>
+        /// Note: You may not write to data you sent after calling this function. 
+        /// </summary>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="channels"></param>
+        /// <param name="data"></param>
+        /// <exception cref="ArgumentException"></exception>
+        public virtual void Set(int width, int height, int channels, channelT[] data)
         {
             long l = width * height * channels;
             if (l != data.Length) throw new ArgumentException("Size mismatch");
@@ -64,7 +72,7 @@ namespace HotRay.Base.Ray.Hot
             Data = data;
         }
 
-        public virtual void Fill(colorT c)
+        public virtual void Fill(channelT c)
         {
             if (Data == null) return;
             for (int i = 0; i < Data.Length; i++)
@@ -75,7 +83,7 @@ namespace HotRay.Base.Ray.Hot
 
         public override RayBase RayClone()
         {
-            return new ImageRay<colorT>(this);
+            return new ImageRay<channelT>(this);
         }
 
     }

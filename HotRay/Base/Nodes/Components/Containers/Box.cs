@@ -438,10 +438,16 @@ namespace HotRay.Base.Nodes.Components.Containers
             SpreadPortRays(ports as IReadOnlyList<OutPort>);
         }
 
-        void RegisterNodeToNextTick(NodeBase node)
+        public void RegisterNodeToNextTick(NodeBase node)
         {
             lock(NodeActiveAtNextTick)
-                NodeActiveAtNextTick.Add(node);
+            {
+                if (!NodeActiveAtNextTick.Contains(node)) // To prevent unlimited ActivateMeNextTick()
+                {
+                    NodeActiveAtNextTick.Add(node);
+                    ActivateMeNextTick();
+                }
+            }
         }
 
         public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
