@@ -11,6 +11,26 @@ namespace HotRay.Base.Ray.Lite
         public BoolRay() : base() { }
         public BoolRay(BoolRay other) : base(other) { }
 
+        public static implicit operator BoolRay(bool other)
+        {
+            return new BoolRay() { Data = other };
+        }
+
+        public static implicit operator bool(BoolRay other)
+        {
+            return other.Data;
+        }
+
+
+        public static explicit operator BoolRay(IntRay other)
+        {
+            return new BoolRay() { Data = other.Data != 0 };
+        }
+
+        public static explicit operator BoolRay(FloatRay other)
+        {
+            return new BoolRay() { Data = other.Data != 0.0 };
+        }
 
         public override RayBase RayClone()
         {

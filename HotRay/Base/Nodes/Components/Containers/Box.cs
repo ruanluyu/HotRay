@@ -2,6 +2,7 @@
 using HotRay.Base.Ray;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -87,17 +88,16 @@ namespace HotRay.Base.Nodes.Components.Containers
             UpdateInPortReflections();
             UpdateOutPortReflections();
 
-            var old2newOutPorts = new Dictionary<OutPort, OutPort>();
-            var old2newInPorts = new Dictionary<InPort, InPort>();
+            var old2new = new Dictionary<BaseObject, BaseObject>();
 
             for (int i = 0; i < inPortInnerReflectionList.Length; i++)
             {
-                old2newOutPorts[other.inPortInnerReflectionList[i]] = inPortInnerReflectionList[i];
+                old2new[other.inPortInnerReflectionList[i]] = inPortInnerReflectionList[i];
             }
 
             for (int i = 0; i < outPortInnerReflectionList.Length; i++)
             {
-                old2newInPorts[other.outPortInnerReflectionList[i]] = outPortInnerReflectionList[i];
+                old2new[other.outPortInnerReflectionList[i]] = outPortInnerReflectionList[i];
             }
 
 
@@ -108,29 +108,45 @@ namespace HotRay.Base.Nodes.Components.Containers
                 var newnode = node.CloneNode();
                 newnode.Parent = this;
                 nodeSet.Add(newnode);
+                old2new[node] = newnode;
                 if (node.InPorts.Count == newnode.InPorts.Count)
                 {
                     for (int i = 0; i < node.InPorts.Count; i++)
                     {
-                        old2newInPorts[node.InPorts[i]] = newnode.InPorts[i];
+                        old2new[node.InPorts[i]] = newnode.InPorts[i];
                     }
                 }
                 if (node.OutPorts.Count == newnode.OutPorts.Count)
                 {
                     for (int i = 0; i < node.OutPorts.Count; i++)
                     {
-                        old2newOutPorts[node.OutPorts[i]] = newnode.OutPorts[i];
+                        old2new[node.OutPorts[i]] = newnode.OutPorts[i];
                     }
                 }
 
             }
 
             // 2. Copy connections.
-            foreach (var outPortKV in old2newOutPorts)
+            foreach (var kv in old2new)
             {
-                if (outPortKV.Key.TargetPort == null) continue;
-                outPortKV.Value.ConnectTo(old2newInPorts[outPortKV.Key.TargetPort]);
+                if(kv.Key is OutPort oldOutPort && kv.Value is OutPort newOutPort)
+                {
+                    if (oldOutPort.TargetPort == null) continue;
+                    newOutPort.ConnectTo((old2new[oldOutPort.TargetPort] as InPort)!);
+                }
             }
+
+            if(_extraInfo != null)
+                foreach (var key in _extraInfo.Keys)
+                {
+                    var extraData = _extraInfo[key];
+                    extraData.CallbackInfoSet = extraData.CallbackInfoSet.Select(cbi => new ExtraInfoData.CallbackInfo()
+                    {
+                        Receiver= (old2new[cbi.Receiver] as NodeBase)!,
+                        Callback = cbi.Callback
+                    }).ToHashSet();
+                    _extraInfo[key] = extraData;
+                }
 
 
 
@@ -401,6 +417,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 port.SendRay();
                 if (port.TargetPort?.Parent is NodeBase node)
                 {
+                    // Log($"{port.Parent} ==[[{port.Ray?.ToString() ?? "null"}]]==> {node}");
                     if (node == this)
                     {
                         continue;
@@ -607,6 +624,151 @@ namespace HotRay.Base.Nodes.Components.Containers
         public override NodeBase CloneNode()
         {
             return new Box(this);
+        }
+
+
+        public struct ExtraInfoData
+        {
+            public struct CallbackInfo
+            {
+                public delegate void SetDataDelegate(NodeBase receiver, object? oldValue, object? newValue);
+                /// <summary>
+                /// Receiver will be sent to Callback if Callback is invoked. 
+                /// </summary>
+                public NodeBase Receiver { get; set; }
+                public SetDataDelegate Callback { get; set; }
+
+                public override bool Equals([NotNullWhen(true)] object? obj)
+                {
+                    if(obj is CallbackInfo other)
+                        return (Receiver == other.Receiver) && (Callback == other.Callback);
+                    return false;
+                }
+
+                public override int GetHashCode()
+                {
+                    unchecked
+                    {
+                        var hash1 = Receiver.GetHashCode();
+                        var hash2 = Callback.GetHashCode();
+                        hash2 = (hash2 << 16) | (hash2 >> 16);
+                        return hash1 ^ hash2;
+                    }
+                }
+
+                public static bool operator ==(CallbackInfo left, CallbackInfo right)
+                {
+                    return left.Equals(right);
+                }
+
+                public static bool operator !=(CallbackInfo left, CallbackInfo right)
+                {
+                    return !left.Equals(right);
+                }
+            }
+
+
+            public ExtraInfoData()
+            {
+                data = null;
+                CallbackInfoSet = new HashSet<CallbackInfo>();
+            }
+
+            public HashSet<CallbackInfo> CallbackInfoSet { get; set; }
+            object? data;
+            public object? Data
+            {
+                set
+                {
+                    foreach (var cbi in CallbackInfoSet)
+                    {
+                        cbi.Callback(cbi.Receiver, data, value);
+                    }
+                    data = value;
+                }
+                get
+                {
+                    return data;
+                }
+            }
+
+            
+            
+            
+        }
+
+        Dictionary<string, ExtraInfoData>? _extraInfo = null;
+        Dictionary<string, ExtraInfoData> ExtraInfo
+        {
+            get
+            {
+                if (_extraInfo == null) _extraInfo = new Dictionary<string, ExtraInfoData>();
+                return _extraInfo;
+            }
+            set
+            {
+                _extraInfo = value;
+            }
+        }
+
+        /// <summary>
+        /// Register callbacks to link parameter of child node to parent box. <br/>
+        /// Note: callbackInfo.Callback should only modify parameters of its first argument. 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="callbackInfo">Note: callbackInfo.Callback should only modify parameters of its first argument. </param>
+        public void RegisterSetExtraInfoCallback(string key, ExtraInfoData.CallbackInfo callbackInfo)
+        {
+            if(!nodeSet.Contains(callbackInfo.Receiver))
+            {
+                Log($"Receiver {callbackInfo.Receiver} is not a child of {this}");
+                return;
+            }
+            if (!ExtraInfo.ContainsKey(key)) ExtraInfo.Add(key, new ExtraInfoData());
+            ExtraInfo[key].CallbackInfoSet.Add(callbackInfo);
+        }
+
+        public void UnregisterSetExtraInfoCallback(string key, ExtraInfoData.CallbackInfo callbackInfo)
+        {
+            if (ExtraInfo.TryGetValue(key, out var v))
+            {
+                v.CallbackInfoSet.Remove(callbackInfo);
+            }
+        }
+
+        public void SetExtraInfo(string key, object? value)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+            if (ExtraInfo.TryGetValue(key, out var v))
+            {
+                v.Data = value;
+            }
+            else
+            {
+                ExtraInfo[key] = new ExtraInfoData() { Data = value };
+            }
+        }
+
+        public object? GetExtraInfo(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+            Box? curNode = this;
+            while (curNode != null)
+            {
+                if (curNode._extraInfo != null && curNode._extraInfo.TryGetValue(key, out var res))
+                {
+                    return res.Data;
+                }
+                if (curNode.Parent is Box p)
+                {
+                    curNode = p;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            return null;
         }
 
 

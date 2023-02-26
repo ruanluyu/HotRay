@@ -1,4 +1,5 @@
-﻿using HotRay.Examples;
+﻿
+using HotRay.Examples;
 
 namespace HotRay
 {
@@ -9,8 +10,10 @@ namespace HotRay
         {
             // Test1AddTwoNumbers.Run();
             // Test2LoopSignals.Run();
-            // Test3BoxAndClone.Run();
-            Test4LoadImage.Run();
+            Test3BoxAndClone.Run();
+            // Test4LoadImage.Run();
+
+
         }
 
 

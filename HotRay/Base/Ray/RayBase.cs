@@ -18,6 +18,7 @@ namespace HotRay.Base.Ray
         public abstract RayBase RayClone();
 
 
+
         private bool disposedValue;
         protected virtual void Dispose(bool disposing)
         {
@@ -47,22 +48,15 @@ namespace HotRay.Base.Ray
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
-    }
 
-
-    public abstract class RayBase<dataT> : RayBase
-    {
-        public abstract dataT Data
-        {
-            get; set;
-        }
-
-        public RayBase() : base() { }
-
-        public RayBase(RayBase<dataT> other) : base(other) { }
-
+        /// <summary>
+        /// Used in print node. See also <seealso cref="Base.Nodes.Components.Utils.Print{rayT}.OnActivated"/>
+        /// </summary>
+        /// <returns></returns>
 
     }
+
+
 
     
 }

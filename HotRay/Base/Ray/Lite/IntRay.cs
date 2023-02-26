@@ -11,6 +11,29 @@ namespace HotRay.Base.Ray.Lite
         public IntRay():base() { }
         public IntRay(IntRay other):base(other) { }
 
+        public static explicit operator IntRay(FloatRay floatRay)
+        {
+            return new IntRay() { Data = (long)floatRay.Data };
+        }
+        
+
+        public static implicit operator IntRay(long other)
+        {
+            return new IntRay() { Data = other };
+        }
+
+
+        public static explicit operator IntRay(BoolRay other)
+        {
+            return new IntRay() { Data = other.Data ? 1 : 0 };
+        }
+
+
+        public static implicit operator long(IntRay other)
+        {
+            return other.Data;
+        }
+
         public override RayBase RayClone()
         {
             return new IntRay(this);
@@ -20,5 +43,6 @@ namespace HotRay.Base.Ray.Lite
         {
             return Data.ToString();
         }
+        
     }
 }

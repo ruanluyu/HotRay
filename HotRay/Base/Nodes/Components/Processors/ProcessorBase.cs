@@ -121,7 +121,7 @@ namespace HotRay.Base.Nodes.Components.Processors
 
         public override NodeBase CloneNode()
         {
-            return new ProcessorBase<coreT>();
+            return new ProcessorBase<coreT>(this);
         }
     }
 }

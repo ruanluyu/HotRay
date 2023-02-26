@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray.Hot
 {
-    public abstract class HotRayBase<dataT> : RayBase<dataT?>
+    public abstract class HotRayBase<dataT> : DataRayBase<dataT?>
         where dataT : class
     {
         public HotRayBase() : base() { }

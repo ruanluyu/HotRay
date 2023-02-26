@@ -15,33 +15,66 @@ namespace HotRay.Examples
 {
     internal static class Test3BoxAndClone
     {
-
-        static Box CreateBox(Space space)
+        public static void Run()
         {
-            var box1 = space.CreateNode<Box>();
+            using Space space = new Space()
+            {
+                TicksPerSecond = 5,
+                PrintTickInfo = true,
+                MaxNodePerTick = -1,
+            };
+            space.LogEvent += s => Console.WriteLine(s);
 
-            box1.AddInPort<IntRay>();
-            box1.AddInPort<IntRay>();
-            box1.AddOutPort<IntRay>();
+            var source = space.CreateNode<PulseSource>();
+            var spread = space.CreateNode<Spread<SignalRay>>();
 
-            var adder1 = box1.CreateNode<ProcessorBase<AdderCore>>();
-            var adder2 = box1.CreateNode<ProcessorBase<AdderCore>>();
-            var spread = box1.CreateNode<Spread<IntRay>>();
+            var box1 = ConstructBox(space);
+            var box2 = new Box(box1);
 
-            spread.PortNum = 2;
+            box1.SetExtraInfo("IntValue", 1);
+            box2.SetExtraInfo("IntValue", 2);
 
-            box1.InPortInnerReflections[0].ConnectTo(adder1.InPorts[0]);
-            box1.InPortInnerReflections[1].ConnectTo(spread.InPorts[0]);
+            source.OutPorts[0].ConnectTo(spread.InPorts[0]);
+            spread.OutPorts[0].ConnectTo(box1.InPorts[0]);
+            spread.OutPorts[1].ConnectTo(box2.InPorts[0]);
+            
 
-            spread.OutPorts[0].ConnectTo(adder1.InPorts[1]);
+            Console.WriteLine(space.LayoutToString());
 
-            adder1.OutPorts[0].ConnectTo(adder2.InPorts[0]);
-            spread.OutPorts[1].ConnectTo(adder2.InPorts[1]);
+            
+            space.Init();
 
-            adder2.OutPorts[0].ConnectTo(box1.OutPortInnerReflections[0]);
-
-            return box1;
+            var task = space.RunAsync();
+            task.Wait();
         }
+
+
+        static Box ConstructBox(Space space)
+        {
+            var box = space.CreateNode<Box>();
+
+            box.AddInPort<SignalRay>();
+
+            var filter = box.CreateNode<SignalToInt>();
+            var print = box.CreateNode<Print<SignalRay>>();
+
+            box.RegisterSetExtraInfoCallback("IntValue", new Box.ExtraInfoData.CallbackInfo()
+            {
+                Receiver = filter,
+                Callback = (r, o, n) =>
+                {
+                    if(n is int i)
+                        (r as SignalToInt)!.EmitValue = i;
+                }
+            });
+
+            box.InPortInnerReflections[0].ConnectTo(filter.InPorts[0]);
+            filter.OutPorts[0].ConnectTo(print.InPorts[0]);
+
+            return box;
+        }
+        
+        /*
         public static void Run()
         {
             using Space space = new Space()
@@ -94,5 +127,33 @@ namespace HotRay.Examples
             var task = space.RunAsync();
             task.Wait();
         }
+
+
+        static Box CreateBox(Space space)
+        {
+            var box1 = space.CreateNode<Box>();
+
+            box1.AddInPort<IntRay>();
+            box1.AddInPort<IntRay>();
+            box1.AddOutPort<IntRay>();
+
+            var adder1 = box1.CreateNode<ProcessorBase<AdderCore>>();
+            var adder2 = box1.CreateNode<ProcessorBase<AdderCore>>();
+            var spread = box1.CreateNode<Spread<IntRay>>();
+
+            spread.PortNum = 2;
+
+            box1.InPortInnerReflections[0].ConnectTo(adder1.InPorts[0]);
+            box1.InPortInnerReflections[1].ConnectTo(spread.InPorts[0]);
+
+            spread.OutPorts[0].ConnectTo(adder1.InPorts[1]);
+
+            adder1.OutPorts[0].ConnectTo(adder2.InPorts[0]);
+            spread.OutPorts[1].ConnectTo(adder2.InPorts[1]);
+
+            adder2.OutPorts[0].ConnectTo(box1.OutPortInnerReflections[0]);
+
+            return box1;
+        }*/
     }
 }

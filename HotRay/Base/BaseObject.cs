@@ -13,9 +13,10 @@ namespace HotRay.Base
         public BaseObject? Parent { 
             set
             {
+                if (_parent != null) LogEvent -= _parent.Log;
                 _parent = value;
-                LogEvent = null;
-                if(_parent != null) LogEvent += _parent.Log;
+                // LogEvent = null;
+                if (_parent != null) LogEvent += _parent.Log;
             }
             get => _parent;
         }
@@ -135,6 +136,8 @@ namespace HotRay.Base
             if (this is Space s) return s;
             return GetNearestParent<Space>();
         }
+
+        
 
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Ray
 {
-    public class StringRay : RayBase<string?>
+    public class StringRay : DataRayBase<string?>
     {
         public StringRay() : base() { }
         public StringRay(StringRay other) : base(other) { Data = other.Data; }

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,6 +25,20 @@ namespace HotRay.Base.Port
             return Box.GetParentBoxOf(this) == Box.GetParentBoxOf(targetPort);
         }
 
+        static bool CanConvert(Type fromType, Type toType)
+        {
+            try
+            {
+                // Throws an exception if there is no conversion from fromType to toType
+                Expression.Convert(Expression.Parameter(fromType), toType);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public virtual bool ConnectableTo([NotNull] InPort targetPort)
         {
             var tt = targetPort.RayType;
@@ -32,7 +47,7 @@ namespace HotRay.Base.Port
             {
                 if (mt == tt) return true;
                 if (tt == typeof(SignalRay)) return true;
-                if (mt.IsSubclassOf(tt)) return true;
+                if (CanConvert(mt, tt)) return true;
             }
             return false;
         }
@@ -60,7 +75,7 @@ namespace HotRay.Base.Port
                 }
                 else
                 {
-                    Log($"Failed to connect: {targetPort}");
+                    Log($"Failed to connect to: {targetPort}");
                 }
             }
         }

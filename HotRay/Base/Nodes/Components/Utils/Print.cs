@@ -14,15 +14,28 @@ namespace HotRay.Base.Nodes.Components.Utils
         public Print() : base() 
         {
             Newline = true;
+            Format = null;
         }
         public Print(Print<rayT> other) : base(other) 
         {
             Newline = other.Newline;
+            Format = other.Format;
         }
 
         public bool Newline
         {
             get; set;
+        }
+
+        /// <summary>
+        /// This option will be treated as an <seealso cref="IFormatProvider"/> to format a string. <br/>
+        /// e.g. To add "The cat said: " in front of any message. 
+        /// Set this to "The cat said: {0}" <br/>
+        /// See also: <seealso cref="string.Format(IFormatProvider?, string, object?)"/>
+        /// </summary>
+        public string? Format
+        {
+            get;set;
         }
 
         public override NodeBase CloneNode()
@@ -34,8 +47,10 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
             if (inPort0.Ray is rayT objRay)
             {
-                if (Newline) Console.WriteLine(objRay.ToString() ?? "");
-                else Console.Write(objRay.ToString() ?? "");
+                string info = objRay.ToString() ?? "null";
+                if (Format != null) string.Format(Format, info);
+                if (Newline) Console.WriteLine(info);
+                else Console.Write(info);
             }
             return Status.Shutdown;
         }
