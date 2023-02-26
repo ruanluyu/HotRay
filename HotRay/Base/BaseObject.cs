@@ -10,7 +10,7 @@ namespace HotRay.Base
     public class BaseObject
     {
         private BaseObject? _parent;
-        public BaseObject? Parent { 
+        public virtual BaseObject? Parent { 
             set
             {
                 if (_parent != null) LogEvent -= _parent.Log;
@@ -131,10 +131,9 @@ namespace HotRay.Base
         }
 
 
-        public Space? GetCurrentSpace()
+        public virtual Space? GetCurrentSpace()
         {
-            if (this is Space s) return s;
-            return GetNearestParent<Space>();
+            return Parent?.GetCurrentSpace() ?? GetNearestParent<Space>();
         }
 
         

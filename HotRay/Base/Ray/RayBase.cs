@@ -19,6 +19,8 @@ namespace HotRay.Base.Ray
         public abstract RayBase RayClone();
 
 
+        public virtual Type? DataType() => null;
+
 
         private bool disposedValue;
         protected virtual void Dispose(bool disposing)

@@ -138,6 +138,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         {
             try
             {
+                Init();
                 var routine = GetSpaceRoutine();
                 double tps = TicksPerSecond;
 
@@ -226,6 +227,9 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-
+        public override Space? GetCurrentSpace()
+        {
+            return this;
+        }
     }
 }

@@ -41,8 +41,6 @@ namespace HotRay.Examples
 
             Console.WriteLine(space.LayoutToString());
 
-            
-            space.Init();
 
             var task = space.RunAsync();
             task.Wait();

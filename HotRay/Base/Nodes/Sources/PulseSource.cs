@@ -10,27 +10,13 @@ namespace HotRay.Base.Nodes.Sources
     public class PulseSource: OneRaySource<SignalRay>
     {
 
-        public PulseSource() : base()
-        {
-            FirstDelay = 0;
-            Count = 1;
-            Interval = 1;
-        }
-
-        public PulseSource(PulseSource other) : base(other)
-        {
-            FirstDelay = other.FirstDelay;
-            Count = other.Count;
-            Interval = other.Interval;
-        }
-
-
         /// <summary>
         /// Delay before emit the first signal. 
         /// </summary>
         public int FirstDelay
         {
-            get; set;
+            get=>exposedParameters.firstDelay; 
+            set=>exposedParameters.firstDelay = value;
         }
 
         /// <summary>
@@ -40,7 +26,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Count
         {
-            get; set;
+            get => exposedParameters.count;
+            set => exposedParameters.count = value;
         }
 
         /// <summary>
@@ -49,8 +36,33 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Interval
         {
-            get; set;
+            get => exposedParameters.interval;
+            set => exposedParameters.interval = value;
         }
+
+
+        private struct Parameters
+        {
+            public int firstDelay;
+            public int count;
+            public int interval;
+        }
+
+        Parameters exposedParameters, cachedParameters;
+
+        public PulseSource() : base()
+        {
+            FirstDelay = 0;
+            Count = 1;
+            Interval = 1;
+        }
+
+        public PulseSource(PulseSource other) : base(other)
+        {
+            exposedParameters = other.exposedParameters;
+        }
+
+        
 
         public override NodeBase CloneNode()
         {
@@ -64,13 +76,19 @@ namespace HotRay.Base.Nodes.Sources
             return Status.Shutdown;
         }
 
+        public override void OnCacheParameters()
+        {
+            base.OnCacheParameters();
+            cachedParameters = exposedParameters;
+        }
+
         IEnumerator<Status> GetRoutine()
         {
-            int c = Count;
+            int c = cachedParameters.count;
             if (c == 0) yield return Status.Shutdown;
 
-            int it = Interval;
-            int fd = FirstDelay;
+            int it = cachedParameters.interval;
+            int fd = cachedParameters.firstDelay;
 
             while (fd-- > 0) yield return Status.WaitForNextStep;
 

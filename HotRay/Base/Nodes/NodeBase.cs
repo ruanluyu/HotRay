@@ -173,6 +173,14 @@ namespace HotRay.Base.Nodes
             return Status.Shutdown;
         }
 
+        /// <summary>
+        /// This function will be called before <seealso cref="OnActivated"/>. <br/>
+        /// Cache parameters in this callback and NERVER do anything else here. 
+        /// </summary>
+        public virtual void OnCacheParameters()
+        {
+
+        }
 
         /// <summary>
         /// Will be called if any of the inports recieved rays. <br/>

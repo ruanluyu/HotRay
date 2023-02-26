@@ -16,6 +16,21 @@ namespace HotRay.Base.Ray.Hot
         }
 
 
+        public override RayBase? CastTo(Type targetType)
+        {
+            if (Data != null)
+            {
+                var dataType = Data.GetType();
+                if(Data is RayBase rb)
+                {
+                    if (dataType == targetType || dataType.IsSubclassOf(targetType))
+                        return rb;
+                    return rb.CastTo(targetType);
+                }
+            }
+            return base.CastTo(targetType);
+        }
+
 
         public override RayBase RayClone()
         {

@@ -22,7 +22,10 @@ namespace HotRay.Base.Ray
             get; set;
         }
 
-        
+        public override Type? DataType()
+        {
+            return typeof(dataT);
+        }
 
         public DataRayBase() : base() { }
 

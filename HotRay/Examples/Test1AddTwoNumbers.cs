@@ -18,6 +18,7 @@ namespace HotRay.Examples
         public static void Run()
         {
             Space space = new Space() { TicksPerSecond = 20, PrintTickInfo = false };
+            space.LogEvent += s => Console.WriteLine(s);
 
             var pulse = space.CreateNode<PulseSource>();
             var spread = space.CreateNode<Spread<SignalRay>>();
@@ -45,10 +46,7 @@ namespace HotRay.Examples
 
             adder.OutPorts[0].ConnectTo(print.InPorts[0]);
 
-
-
-            space.LogEvent += s => Console.WriteLine(s);
-            space.Init();
+            
             var task = space.RunAsync();
             task.Wait();
         }

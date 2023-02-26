@@ -23,7 +23,7 @@ namespace HotRay.Examples
                 PrintTickInfo = true,
                 MaxNodePerTick = -1
             };
-
+            space.LogEvent += s => Console.WriteLine(s);
 
             var pulse = space.CreateNode<PulseSource>();
             var orgate = space.CreateNode<OrGate>();
@@ -47,8 +47,7 @@ namespace HotRay.Examples
 
 
 
-            space.LogEvent += s => Console.WriteLine(s);
-            space.Init();
+            
             var task = space.RunAsync();
 
             task.Wait();

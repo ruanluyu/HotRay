@@ -9,6 +9,16 @@ namespace HotRay.Base.Nodes.Sources
 {
     public class ConstantSource<rayT> : OneRaySource<rayT> where rayT : RayBase
     {
+        public rayT? EmitValue { get => exposedParameters.emitValue; set => exposedParameters.emitValue =value; }
+
+        private struct Parameters
+        {
+            public rayT emitValue;
+        }
+
+        Parameters exposedParameters, cachedParameters;
+
+
         public ConstantSource() : base()
         {
 
@@ -22,6 +32,14 @@ namespace HotRay.Base.Nodes.Sources
         public override NodeBase CloneNode()
         {
             return new ConstantSource<rayT>(this);
+        }
+
+
+        public override Status OnEntry()
+        {
+            base.OnEntry();
+            EmitRayTo(outPort0, cachedParameters.emitValue);
+            return Status.Shutdown;
         }
     }
 }

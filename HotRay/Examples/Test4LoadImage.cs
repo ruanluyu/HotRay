@@ -24,6 +24,7 @@ namespace HotRay.Examples
         public static void Run()
         {
             Space space = new Space() { TicksPerSecond = 20, PrintTickInfo = false };
+            space.LogEvent += s => Console.WriteLine(s);
 
             var pulse = space.CreateNode<PulseSource>();
             var imageFilter = space.CreateNode<SignalToImage>();
@@ -45,8 +46,7 @@ namespace HotRay.Examples
             imageFilter.OutPorts[0].ConnectTo(imageSaver.InPorts[0]);
             
 
-            space.LogEvent += s => Console.WriteLine(s);
-            space.Init();
+            
             var task = space.RunAsync();
             task.Wait();
 

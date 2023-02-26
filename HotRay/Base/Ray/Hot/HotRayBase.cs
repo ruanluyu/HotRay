@@ -22,7 +22,7 @@ namespace HotRay.Base.Ray.Hot
 
         public override RayBase? CastTo(Type targetType)
         {
-            if (targetType == typeof(ObjectRay)) new ObjectRay() { Data = Data };
+            if (targetType == typeof(ObjectRay)) return new ObjectRay() { Data = this };
             if (targetType == typeof(StringRay)) return new StringRay() { Data = ToString() };
             return base.CastTo(targetType);
         }

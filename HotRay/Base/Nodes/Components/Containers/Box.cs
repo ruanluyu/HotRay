@@ -477,12 +477,13 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public override Status OnEntry()
         {
-            foreach (var source in nodeSet)
+            foreach (var node in nodeSet)
             {
-                var status = source.OnEntry();
+                node.OnCacheParameters();
+                var status = node.OnEntry();
                 if (status.HasResult)
                 {
-                    SpreadPortRays(status.PortMask ?? source.OutPorts);
+                    SpreadPortRays(status.PortMask ?? node.OutPorts);
                 }
             }
             SyncOutPortReflections();
@@ -544,6 +545,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                         yield return Status.Shutdown;
                     }
 
+                    foreach (var node in NodeActiveAtThisTick)
+                    {
+                        node.OnCacheParameters();
+                    }
 
                     Task[] activeTasks = NodeActiveAtThisTick.Select(node => Task.Run(() =>
                     {
@@ -628,6 +633,8 @@ namespace HotRay.Base.Nodes.Components.Containers
                 }
             }
         }
+
+
 
         public override NodeBase CloneNode()
         {
@@ -830,6 +837,27 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
             sb.AppendLine($"==== {this} end=");
             return sb.ToString();
+        }
+
+
+        Space? currentSpaceCache;
+
+        public override BaseObject? Parent { 
+            get => base.Parent; 
+            set
+            {
+                base.Parent = value;
+                currentSpaceCache = base.GetCurrentSpace();
+            }
+        }
+
+        public override Space? GetCurrentSpace()
+        {
+            if (currentSpaceCache == null)
+            {
+                currentSpaceCache = base.GetCurrentSpace();
+            }
+            return currentSpaceCache;
         }
     }
 }
