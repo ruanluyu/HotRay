@@ -19,7 +19,7 @@ namespace HotRay.Base.Ray
             Data = other.Data?.ToArray();
         }
 
-        public virtual void ResizeMemory(ulong bytes)
+        public virtual void ResizeMemory(long bytes)
         {
             Data = new dataT[bytes];
         }

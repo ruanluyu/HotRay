@@ -21,15 +21,11 @@ namespace HotRay.Base.Ray.Lite
             return other.Data;
         }
 
-
-        public static explicit operator BoolRay(IntRay other)
+        public override RayBase? CastTo(Type targetType)
         {
-            return new BoolRay() { Data = other.Data != 0 };
-        }
-
-        public static explicit operator BoolRay(FloatRay other)
-        {
-            return new BoolRay() { Data = other.Data != 0.0 };
+            if (targetType == typeof(IntRay)) return new IntRay() { Data = Data ? 1 : 0 };
+            if (targetType == typeof(FloatRay)) return new FloatRay() { Data = Data ? 1.0 : 0.0 };
+            return base.CastTo(targetType);
         }
 
         public override RayBase RayClone()

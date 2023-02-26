@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HotRay.Base.Ray.Hot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,25 +17,18 @@ namespace HotRay.Base.Ray.Lite
             return new FloatRay() { Data = other };
         }
 
-
-        public static explicit operator FloatRay(BoolRay other)
-        {
-            return new FloatRay() { Data = other.Data ? 1.0 : 0.0 };
-        }
-
-
         
         
         public static implicit operator double(FloatRay other)
         {
             return other.Data;
         }
-
-        public static explicit operator FloatRay(IntRay other)
+        public override RayBase? CastTo(Type targetType)
         {
-            return new FloatRay() { Data = other.Data };
+            if (targetType == typeof(IntRay)) return new IntRay() { Data = (long)Data };
+            if (targetType == typeof(BoolRay)) return new BoolRay() { Data = Data != 0.0 };
+            return base.CastTo(targetType);
         }
-
         public override RayBase RayClone()
         {
             return new FloatRay(this);

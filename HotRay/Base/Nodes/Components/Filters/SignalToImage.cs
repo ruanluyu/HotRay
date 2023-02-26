@@ -93,14 +93,14 @@ namespace HotRay.Base.Nodes.Components.Filters
             if(bitmap != null)
             {
                 res = new ImageRGBA8888Ray();
-                res.SetSize((uint)bitmap.Width, (uint)bitmap.Height);
-                res.Data = bitmap.Pixels.Select(p=> new Color<byte>()
+                res.Set(bitmap.Width, bitmap.Height, 4, 
+                    bitmap.Pixels.SelectMany(p => new byte[]
                 {
-                    r = p.Red,
-                    g = p.Green,
-                    b = p.Blue,
-                    a = p.Alpha
-                }).ToArray();
+                    p.Red,
+                    p.Green,
+                    p.Blue,
+                    p.Alpha
+                }).ToArray());
             }
 
             return res;

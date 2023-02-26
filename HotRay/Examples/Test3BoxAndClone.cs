@@ -56,7 +56,7 @@ namespace HotRay.Examples
             box.AddInPort<SignalRay>();
 
             var filter = box.CreateNode<SignalToInt>();
-            var print = box.CreateNode<Print<SignalRay>>();
+            var print = box.CreateNode<Print<BoolRay>>();
 
             box.RegisterSetExtraInfoCallback("IntValue", new Box.ExtraInfoData.CallbackInfo()
             {

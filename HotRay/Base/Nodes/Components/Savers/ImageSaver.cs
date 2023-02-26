@@ -49,11 +49,26 @@ namespace HotRay.Base.Nodes.Components.Savers
         protected override bool OnSave(ImageRGBA8888Ray ray)
         {
             bool suc = false;
-            SKBitmap bitmap = new SKBitmap((int)ray.Width, (int)ray.Height);
+            SKBitmap bitmap = new SKBitmap(ray.Width, ray.Height);
             var srcPixels = ray.Data;
             if (srcPixels != null)
             {
-                bitmap.Pixels = srcPixels.Select(p => new SKColor(p.r, p.g, p.b, p.a)).ToArray();
+                var outColors = new SKColor[ray.Width * ray.Height];
+                for (int y = 0; y < ray.Height; y++)
+                {
+                    for (int x = 0; x < ray.Width; x++)
+                    {
+                        long pid = (y * ray.Width + (long)x);
+                        long id = pid << 2;
+                        outColors[pid] = new SKColor(
+                            srcPixels[id + 0],
+                            srcPixels[id + 1],
+                            srcPixels[id + 2],
+                            srcPixels[id + 3]
+                            );
+                    }
+                }
+                bitmap.Pixels = outColors;
 
 
                 var path = FilePath;

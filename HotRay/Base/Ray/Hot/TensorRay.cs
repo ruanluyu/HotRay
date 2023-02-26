@@ -11,9 +11,9 @@ namespace HotRay.Base.Ray.Hot
         where numberT:struct
     {
         static readonly numberT[] sharedEmptyData = new numberT[0];
-        static readonly uint[] sharedEmptyDims = new uint[0];
+        static readonly int[] sharedEmptyDims = new int[0];
 
-        public uint[] Dims { get; private set; }
+        public int[] Dims { get; private set; }
 
         public TensorRay():base()
         {
@@ -26,7 +26,7 @@ namespace HotRay.Base.Ray.Hot
             Dims = (other.Dims == sharedEmptyDims) ? sharedEmptyDims : other.Dims!.ToArray();
         }
 
-        protected virtual void _Reshape(params uint[] dims)
+        protected virtual void _Reshape(params int[] dims)
         {
             Dims = dims;
             if (Dims.Length == 0)
@@ -36,7 +36,7 @@ namespace HotRay.Base.Ray.Hot
             }
             else
             {
-                ulong totalLength = 1;
+                long totalLength = 1;
                 checked
                 {
                     for (int i = 0; i < Dims.Length; i++)
@@ -55,12 +55,12 @@ namespace HotRay.Base.Ray.Hot
             return new TensorRay<numberT>(this);
         }
 
-        protected virtual ulong _CoordToID(params uint[] coords)
+        protected virtual long _CoordToID(params int[] coords)
         {
             // if (Dims.Length == 0) throw new IndexOutOfRangeException();
             // if (coords.Length == 0) throw new ArgumentNullException();
-            ulong rid = coords[0];
-            ulong mul = Dims[0];
+            long rid = coords[0];
+            long mul = Dims[0];
             for (int i = 1; i < Dims.Length; i++)
             {
                 if (i >= coords.Length) break;
@@ -72,17 +72,17 @@ namespace HotRay.Base.Ray.Hot
             return rid;
         }
 
-        protected virtual void _IDToCoord(ulong id, uint[] coords)
+        protected virtual void _IDToCoord(int id, int[] coords)
         {
             // if (Dims.Length != coords.Length) throw new ArgumentException("coords");
             for (int i = 0; i < Dims.Length; i++)
             {
-                coords[i] = (uint)(id % Dims[i]);
+                coords[i] = id % Dims[i];
                 id /= Dims[i];
             }
         }
 
-        protected virtual numberT _Get(params uint[] ids)
+        protected virtual numberT _Get(params int[] ids)
         {
             try
             {
@@ -94,7 +94,7 @@ namespace HotRay.Base.Ray.Hot
             return default;
         }
 
-        protected virtual void _Set(numberT n, params uint[] ids)
+        protected virtual void _Set(numberT n, params int[] ids)
         {
             try
             {
@@ -115,14 +115,14 @@ namespace HotRay.Base.Ray.Hot
         }
 
 
-        protected virtual TensorRay<numberT> _Slice(uint[] start, uint[] count)
+        protected virtual TensorRay<numberT> _Slice(int[] start, int[] count)
         {
             var res = new TensorRay<numberT>();
             if (!Empty)
             {
                 if (start.Length != count.Length) throw new ArgumentException("start.Length != count.Length");
                 if (start.Length != Dims.Length) throw new ArgumentException("start.Length != Dims.Length");
-                uint[] cache = new uint[start.Length];
+                int[] cache = new int[start.Length];
                 for (int i = 0; i < start.Length; i++)
                 {
                     if (start[i] >= Dims[i]) throw new IndexOutOfRangeException("start");
@@ -131,7 +131,7 @@ namespace HotRay.Base.Ray.Hot
                 res._Reshape(cache);
                 if (!res.Empty)
                 {
-                    for (ulong i = 0; i < (ulong)res.Data!.LongLength; i++)
+                    for (int i = 0; i < res.Data!.Length; i++)
                     {
                         res._IDToCoord(i, cache);
                         for (int j = 0; j < cache.Length; j++)

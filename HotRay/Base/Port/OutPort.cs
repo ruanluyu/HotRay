@@ -27,16 +27,18 @@ namespace HotRay.Base.Port
 
         static bool CanConvert(Type fromType, Type toType)
         {
-            try
+            if (fromType == toType) return true;
+            if (fromType.IsSubclassOf(toType)) return true;
+            if(fromType.IsSubclassOf(typeof(RayBase)))
             {
-                // Throws an exception if there is no conversion from fromType to toType
-                Expression.Convert(Expression.Parameter(fromType), toType);
-                return true;
+                var inst = fromType.GetConstructor(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance,
+                    Type.EmptyTypes)?.Invoke(new object[0]) as RayBase;
+                if(inst != null)
+                {
+                    return inst.CastTo(toType) != null;
+                }
             }
-            catch
-            {
-                return false;
-            }
+            return false;
         }
 
         public virtual bool ConnectableTo([NotNull] InPort targetPort)
@@ -45,9 +47,8 @@ namespace HotRay.Base.Port
             var mt = RayType;
             if(IsSameBoxWith(targetPort))
             {
-                if (mt == tt) return true;
-                if (tt == typeof(SignalRay)) return true;
-                if (CanConvert(mt, tt)) return true;
+                if (CanConvert(mt, tt)) 
+                    return true;
             }
             return false;
         }

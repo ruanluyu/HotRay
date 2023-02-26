@@ -37,7 +37,7 @@ namespace HotRay.Examples
             imageFilter.ImagePath = "https://pw.yuelili.com/wp-content/uploads/2023/02/thumb-1920-880845.jpg";
             imageFilter.CacheImage = true;
             imageSaver.FileFolder = "";
-            imageSaver.Overwrite = false;
+            imageSaver.Overwrite = true;
             imageSaver.FileName = "lyza-and-riko";
             imageSaver.EncodeFormat = ImageSaver.Format.PNG;
 

@@ -11,18 +11,18 @@ namespace HotRay.Base.Port
     public abstract class InPort : PortBase
     {
         public InPort() { 
-            SourcePort = null; 
-            dynamicConversion = null; 
+            SourcePort = null;
+            needConversion = false; 
         }
         public InPort(InPort other) : base(other)
         {
             SourcePort = null;
-            dynamicConversion = null;
+            needConversion = false;
         }
 
 
         OutPort? sourcePort;
-        Delegate? dynamicConversion;
+        bool needConversion;
         public OutPort? SourcePort
         {
             get
@@ -31,7 +31,7 @@ namespace HotRay.Base.Port
             }
             set
             {
-                dynamicConversion = null;
+                needConversion = false;
                 if (value == null)
                 {
                     return;
@@ -40,8 +40,7 @@ namespace HotRay.Base.Port
                 var thisType = RayType;
                 if(thisType != sourceType)
                 {
-                    var sourceTypeParam = Expression.Parameter(sourceType);
-                    dynamicConversion = Expression.Lambda(Expression.Convert(sourceTypeParam, thisType), sourceTypeParam).Compile();
+                    needConversion = true;
                 }
                 sourcePort = value;
             }
@@ -63,13 +62,13 @@ namespace HotRay.Base.Port
                 }
                 else
                 {
-                    if(dynamicConversion == null)
+                    if(needConversion)
                     {
-                        base.Ray = value;
+                        base.Ray = value.CastTo(RayType);
                     }
                     else
                     {
-                        base.Ray = dynamicConversion.DynamicInvoke(value) as RayBase;
+                        base.Ray = value;
                     }
                 }
             }

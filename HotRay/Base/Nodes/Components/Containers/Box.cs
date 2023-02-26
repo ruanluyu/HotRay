@@ -90,6 +90,8 @@ namespace HotRay.Base.Nodes.Components.Containers
 
             var old2new = new Dictionary<BaseObject, BaseObject>();
 
+            old2new[other] = this;
+
             for (int i = 0; i < inPortInnerReflectionList.Length; i++)
             {
                 old2new[other.inPortInnerReflectionList[i]] = inPortInnerReflectionList[i];
@@ -719,9 +721,9 @@ namespace HotRay.Base.Nodes.Components.Containers
         /// <param name="callbackInfo">Note: callbackInfo.Callback should only modify parameters of its first argument. </param>
         public void RegisterSetExtraInfoCallback(string key, ExtraInfoData.CallbackInfo callbackInfo)
         {
-            if(!nodeSet.Contains(callbackInfo.Receiver))
+            if(!nodeSet.Contains(callbackInfo.Receiver) && callbackInfo.Receiver != this)
             {
-                Log($"Receiver {callbackInfo.Receiver} is not a child of {this}");
+                Log($"Receiver {callbackInfo.Receiver} is neither a child of {this} nor the box itself. ");
                 return;
             }
             if (!ExtraInfo.ContainsKey(key)) ExtraInfo.Add(key, new ExtraInfoData());

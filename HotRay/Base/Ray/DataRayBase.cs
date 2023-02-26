@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HotRay.Base.Ray.Lite;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,8 @@ namespace HotRay.Base.Ray
         {
             get; set;
         }
+
+        
 
         public DataRayBase() : base() { }
 
