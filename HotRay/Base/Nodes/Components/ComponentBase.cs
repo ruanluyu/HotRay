@@ -83,7 +83,7 @@ namespace HotRay.Base.Nodes.Components
 
         public override IReadOnlyList<OutPort> OutPorts => outPortList;
 
-        public override Status OnEntry() { return Status.Shutdown; }
+        // public override async Task<Status> OnBigBang() { return Status.Shutdown; }
 
     }
 }

@@ -27,15 +27,15 @@ namespace HotRay.Base.Nodes.Components.Savers
         }
 
 
-        protected abstract bool OnSave(rayT ray);
+        protected abstract  Task<bool> OnSave(rayT ray);
 
-        public override Status OnActivated()
+        public override async Task<Status> OnActivated()
         {
             if (inPort0.ChangedSinceLastCheck)
             {
                 if(inPort0.Ray is rayT ray)
                 {
-                    EmitRayTo(outPort0, new BoolRay() { Data = OnSave(ray) });
+                    EmitRayTo(outPort0, new BoolRay() { Data = await OnSave(ray) });
                 }
                 else
                 {

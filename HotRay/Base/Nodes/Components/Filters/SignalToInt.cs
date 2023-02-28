@@ -27,10 +27,10 @@ namespace HotRay.Base.Nodes.Components.Filters
             return new SignalToInt(this);
         }
 
-        protected override IntRay? ParseRayType(SignalRay? inR)
+        protected override Task<IntRay?> ParseRayType(SignalRay? inR)
         {
-            if (inR == null) return null;
-            return new IntRay() { Data = EmitValue };
+            if (inR == null) return Task.FromResult<IntRay?>(null);
+            return Task.FromResult<IntRay?>(new IntRay() { Data = EmitValue });
         }
     }
 }

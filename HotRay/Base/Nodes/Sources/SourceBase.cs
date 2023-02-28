@@ -26,9 +26,9 @@ namespace HotRay.Base.Nodes.Sources
         public override IReadOnlyList<OutPort> OutPorts  => outPortList;
 
 
-        public override sealed Status OnActivated()
+        public override sealed async Task<Status> OnActivated()
         {
-            return base.OnActivated();
+            return await base.OnActivated();
         }
     }
 }

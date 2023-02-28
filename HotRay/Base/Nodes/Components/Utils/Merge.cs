@@ -37,6 +37,11 @@ namespace HotRay.Base.Nodes.Components.Utils
             get => inPortList.Length;
             set
             {
+                if(GetCurrentSpace()?.Running ?? false)
+                {
+                    Log("PortNum cannot be set while space is running. ");
+                    return;
+                }
                 if (value < 0)
                 {
                     PortNum = 0;
@@ -52,9 +57,9 @@ namespace HotRay.Base.Nodes.Components.Utils
         }
 
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
-            if (PortNum == 0) return Status.Shutdown;
+            if (PortNum == 0) return Status.ShutdownTask;
             for (int i = 0; i < inPortList.Length; i++)
             {
                 var port = inPortList[i];
@@ -64,10 +69,10 @@ namespace HotRay.Base.Nodes.Components.Utils
                     {
                         port.ResetChanged();
                     }
-                    return EmitRayTo(outPort0, port.Ray);
+                    return EmitRayToTask(outPort0, port.Ray);
                 }
             }
-            return EmitRayTo(outPort0, null);
+            return EmitRayToTask(outPort0, null);
         }
 
     }

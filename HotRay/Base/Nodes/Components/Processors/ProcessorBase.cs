@@ -105,17 +105,17 @@ namespace HotRay.Base.Nodes.Components.Processors
             }
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
             for (int i = 0; i < inPortList.Length; i++)
                 if (inPortList[i].Ray == null)
-                    return Status.Shutdown;
+                    return Status.ShutdownTask;
 
             _SendInPortRaysToCore();
             core.Process();
             _SendOutPortRaysFromCore();
             
-            return Status.ShutdownAndEmit;
+            return Status.ShutdownAndEmitTask;
         }
 
 

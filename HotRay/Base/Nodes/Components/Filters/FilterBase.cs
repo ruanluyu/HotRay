@@ -23,13 +23,13 @@ namespace HotRay.Base.Nodes.Components.Filters
         {
         }
 
-        protected abstract outRay? ParseRayType(inRay? inR);
+        protected abstract Task<outRay?> ParseRayType(inRay? inR);
 
-        public sealed override Status OnActivated()
+        public sealed override async Task<Status> OnActivated()
         {
             if(inPort0.Ray is inRay inray)
             {
-                return EmitRayTo(outPort0, ParseRayType(inray));
+                return EmitRayTo(outPort0, await ParseRayType(inray));
             }
             else
             {

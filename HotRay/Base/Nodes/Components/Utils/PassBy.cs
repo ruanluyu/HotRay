@@ -32,16 +32,16 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new PassBy<rayT>(this);
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
             var res = EmitRayTo(outPort0, inPort0.Ray);
             if (res.HasResult) // Status changed
             {
                 var res2 = EmitSignalTo(outPort1, inPort0.Ray != null);
-                if (res2.HasResult) return Status.ShutdownAndEmit;
-                return Status.ShutdownAndEmitWith(outPort0);
+                if (res2.HasResult) return Status.ShutdownAndEmitTask;
+                return Status.ShutdownAndEmitWithTask(outPort0);
             }
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
         public virtual bool InsertAfter(OutPort outport)

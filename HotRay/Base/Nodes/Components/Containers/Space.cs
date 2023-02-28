@@ -56,17 +56,29 @@ namespace HotRay.Base.Nodes.Components.Containers
 
 
         Task? runTask = null;
-        public bool Running => runTask != null;
+        public bool Running => runTask != null && !paused;
 
         CancellationTokenSource? cancellationSource;
         public CancellationToken cancellationToken;
 
-        public Task RunAsync()
+        /// <summary>
+        /// Start running space. <br/>
+        /// See <see cref="PauseAsync"/> if you want to pause the space. <br/>
+        /// See <see cref="ContinueAsync"/> if you want to continue a paused space. <br/>
+        /// See <see cref="CollapseAsync(float)"/> if you want to stop the space. 
+        /// </summary>
+        /// <returns></returns>
+        public Task BigBangAsync()
         {
             if (Running)
             {
                 Log("Space is running. ");
                 return runTask!;
+            }
+            else if(runTask != null)
+            {
+                Log("Space has already big-banged, will return existing task instance. ");
+                return runTask;
             }
 
             cancellationSource = new CancellationTokenSource();
@@ -80,7 +92,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 {
                     var timeoutTicks = 3.0f;
                     Log($"Detected cancel event {arg.SpecialKey}. Trying cancel task in {timeoutTicks:F2} [ticks]...");
-                    var task = Task.Run(() => CancelAsync(timeoutTicks));
+                    var task = Task.Run(() => CollapseAsync(timeoutTicks));
                     if(task.IsFaulted)
                     {
                         throw task.Exception ?? new Exception("Unknown");
@@ -100,12 +112,45 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-        public async Task CancelAsync(float timeoutTicks = 3.0f)
+        public async Task PauseAsync()
+        {
+            if (!Running)
+            {
+                Log("Failed to pause: space is not running. ");
+                return;
+            };
+            pauseRequest = true;
+            while(!paused)
+            {
+                await Task.Delay(1000);
+            }
+            Log("Paused sapce. ");
+        }
+
+        public async Task ContinueAsync()
+        {
+            if (runTask == null)
+            {
+                Log("Call RunAsync first. ");
+                return;
+            }
+            if (Running) return;
+            pauseRequest = false;
+            while(paused)
+            {
+                await Task.Delay(1000);
+            }
+            Log("Continued space.");
+        }
+
+        public async Task CollapseAsync(float timeoutTicks = 3)
         {
             if (cancellationSource == null) return;
             if (runTask == null) return;
             try
             {
+                if (paused) await ContinueAsync();
+
                 cancellationSource.Cancel();
                 var timeout = timeoutTicks / TicksPerSecond;
 
@@ -113,7 +158,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 await runTask.WaitAsync(TimeSpan.FromSeconds(timeout));
                 if (runTask.IsCompleted)
                 {
-                    
+                    Log($"Space is successfully canceled. ");
                 }
                 else
                 {
@@ -134,7 +179,20 @@ namespace HotRay.Base.Nodes.Components.Containers
             return curTick >= MaxTick;
         }
 
-        void TaskCore()
+        public bool pauseRequest = false;
+        public bool paused = false;
+
+        async Task CheckPause()
+        {
+            while(pauseRequest)
+            {
+                paused = true;
+                await Task.Delay(1000);
+            }
+            paused = false;
+        }
+
+        async Task TaskCore()
         {
             try
             {
@@ -158,7 +216,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                             break;
                         }
                         if (PrintTickInfo)  Log($"Tick {tick,7}");
-                        if (routine.MoveNext())
+                        if (await routine.MoveNextAsync())
                         {
                             if (PrintTickInfo)
                             {
@@ -188,11 +246,15 @@ namespace HotRay.Base.Nodes.Components.Containers
 
                     ++tick;
 
+                    await CheckPause();
+
                     double waitTime = (tick * 1000 / tps) 
                         - ((int)(Environment.TickCount64- startMs));
 
                     if (waitTime > 0) 
-                        Thread.Sleep((int)waitTime);
+                        await Task.Delay((int)waitTime);
+
+                    await CheckPause();
                 }
             }
             catch (Exception e)
@@ -204,15 +266,15 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        IEnumerator GetSpaceRoutine()
+        async IAsyncEnumerator<object?> GetSpaceRoutine()
         {
-            Log("Entry...");
-            OnEntry();
-            Log("Entry done. ");
+            Log("Big banging...");
+            await OnBigBang();
+            Log("Big bang done. ");
             yield return null;
 
             var routine = GetBoxRoutine();
-            while(routine.MoveNext())
+            while(await routine.MoveNextAsync())
             {
                 if(cancellationToken.IsCancellationRequested)
                 {

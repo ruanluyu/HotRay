@@ -50,14 +50,14 @@ namespace HotRay.Base.Nodes.Components.Logics
             return new AndGate(this);
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
-            if (PortNum == 0) return Status.Shutdown;
+            if (PortNum == 0) return Status.ShutdownTask;
             for (int i = 0; i < inPortList.Length; i++)
             {
-                if (inPortList[i].Ray == null) return EmitSignalTo(outPort0, false);
+                if (inPortList[i].Ray == null) return EmitSignalToTask(outPort0, false);
             }
-            return EmitSignalTo(outPort0, true);
+            return EmitSignalToTask(outPort0, true);
         }
 
     }

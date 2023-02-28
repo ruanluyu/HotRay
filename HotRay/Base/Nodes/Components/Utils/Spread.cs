@@ -54,20 +54,20 @@ namespace HotRay.Base.Nodes.Components.Utils
             return new Spread<rayT>(this);
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
-            if (PortNum == 0) return Status.Shutdown;
+            if (PortNum == 0) return Status.ShutdownTask;
 
 
             var refRay = inPort0.Ray;
             // inPort0.Ray = null;
-            if (refRay == outPortList[0].Ray) return Status.Shutdown;
+            if (refRay == outPortList[0].Ray) return Status.ShutdownTask;
 
             outPortList[0].Ray = refRay;
             for (int i = 1; i < outPortList.Length; i++)
                 outPortList[i].Ray = refRay?.RayClone();
 
-            return Status.ShutdownAndEmit;
+            return Status.ShutdownAndEmitTask;
         }
 
     }

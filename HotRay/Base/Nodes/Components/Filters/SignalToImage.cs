@@ -40,14 +40,10 @@ namespace HotRay.Base.Nodes.Components.Filters
         {
             base.Init();
             _cache = null;
-            if(CacheImage)
-            {
-                _cache = Load();
-            }
         }
 
-        
-        ImageRGBA8888Ray? Load()
+
+        async Task<ImageRGBA8888Ray?> LoadAsync()
         {
             if (string.IsNullOrEmpty(ImagePath)) return null;
 
@@ -58,24 +54,17 @@ namespace HotRay.Base.Nodes.Components.Filters
             {
                 var httpClient = HttpClient;
 
-                var downloadTask = Task.Run(async () =>
+                using (Stream stream = await httpClient.GetStreamAsync(ImagePath))
+                using (MemoryStream memStream = new MemoryStream())
                 {
-                    using (Stream stream = await httpClient.GetStreamAsync(ImagePath))
-                    using (MemoryStream memStream = new MemoryStream())
-                    {
-                        await stream.CopyToAsync(memStream);
-                        memStream.Seek(0, SeekOrigin.Begin);
-
-                        return SKBitmap.Decode(memStream);
-                    };
-
-                });
-                downloadTask.Wait();
-                bitmap = downloadTask.Result;
+                    await stream.CopyToAsync(memStream);
+                    memStream.Seek(0, SeekOrigin.Begin);
+                    bitmap = SKBitmap.Decode(memStream);
+                }
             }
             else
             {
-                if(File.Exists(ImagePath))
+                if (File.Exists(ImagePath))
                 {
                     try
                     {
@@ -90,10 +79,10 @@ namespace HotRay.Base.Nodes.Components.Filters
                 }
             }
 
-            if(bitmap != null)
+            if (bitmap != null)
             {
                 res = new ImageRGBA8888Ray();
-                res.Set(bitmap.Width, bitmap.Height, 4, 
+                res.Set(bitmap.Width, bitmap.Height, 4,
                     bitmap.Pixels.SelectMany(p => new byte[]
                 {
                     p.Red,
@@ -107,12 +96,13 @@ namespace HotRay.Base.Nodes.Components.Filters
         }
 
 
+
         public override NodeBase CloneNode()
         {
             return new SignalToImage(this);
         }
 
-        protected override ImageRGBA8888Ray? ParseRayType(SignalRay? inR)
+        protected override async Task<ImageRGBA8888Ray?> ParseRayType(SignalRay? inR)
         {
             if (inR == null) return null;
             if (string.IsNullOrEmpty(ImagePath)) return null;
@@ -121,7 +111,7 @@ namespace HotRay.Base.Nodes.Components.Filters
             {
                 if(_cache == null)
                 {
-                    _cache = Load();
+                    _cache = await LoadAsync();
                     if (_cache == null)
                     {
                         Log($"Failed to load image at {ImagePath}");
@@ -130,7 +120,7 @@ namespace HotRay.Base.Nodes.Components.Filters
                 }
                 return new ImageRGBA8888Ray(_cache);
             }
-            return Load();
+            return await LoadAsync();
         }
     }
 }

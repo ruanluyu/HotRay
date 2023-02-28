@@ -9,33 +9,55 @@ namespace HotRay.Base.Nodes.Sources
 {
     public class RandomPulseSource : OneRaySource<SignalRay>
     {
-        public RandomPulseSource():base() { EmitProbability = 0.5f; }
-        public RandomPulseSource(RandomPulseSource other) :base(other) { EmitProbability = other.EmitProbability; RandomSeed = other.RandomSeed; }
+        private struct Parameters
+        {
+            public float emitProbability;
+            public int randomSeed;
+        }
 
+        Parameters exposed, cached;
+
+
+        public float EmitProbability
+        {
+            set => exposed.emitProbability = value;
+            get => exposed.emitProbability;
+        }
+        public int RandomSeed
+        {
+            set => exposed.randomSeed = value;
+            get => exposed.randomSeed;
+        }
+
+        public RandomPulseSource():base() { EmitProbability = 0.5f; RandomSeed = 0xfabf; }
         public RandomPulseSource(float prob, int seed) : base() { EmitProbability = prob; RandomSeed = seed; }
+        public RandomPulseSource(RandomPulseSource other) :base(other) { exposed = other.exposed; }
 
-        public float EmitProbability { set; get; }
-        public int RandomSeed { set; get; }
+        public override void OnCacheParameters()
+        {
+            base.OnCacheParameters();
+            cached = exposed;
+        }
 
         public override NodeBase CloneNode()
         {
             return new RandomPulseSource(this);
         }
 
-        public override Status OnEntry()
+        public override Task<Status> OnBigBang()
         {
-            if(EmitProbability <= 0) return Status.Shutdown;
+            if(cached.emitProbability <= 0) return Status.ShutdownTask;
             RunRoutine(GetRoutine());
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
-        IEnumerator<Status> GetRoutine()
+        async IAsyncEnumerator<Status> GetRoutine()
         {
-            var radomStatus = new Random(RandomSeed);
+            var radomStatus = new Random(cached.randomSeed);
             var lastSignal = false;
             while(true)
             {
-                var curSignal = radomStatus.NextSingle() <= EmitProbability;
+                var curSignal = radomStatus.NextSingle() <= cached.emitProbability;
                 if(curSignal != lastSignal)
                 {
                     outPort0.Ray = curSignal ? SignalRay.SharedSignal : null;

@@ -15,8 +15,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int FirstDelay
         {
-            get=>exposedParameters.firstDelay; 
-            set=>exposedParameters.firstDelay = value;
+            get=>exposed.firstDelay; 
+            set=>exposed.firstDelay = value;
         }
 
         /// <summary>
@@ -26,8 +26,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Count
         {
-            get => exposedParameters.count;
-            set => exposedParameters.count = value;
+            get => exposed.count;
+            set => exposed.count = value;
         }
 
         /// <summary>
@@ -36,8 +36,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Interval
         {
-            get => exposedParameters.interval;
-            set => exposedParameters.interval = value;
+            get => exposed.interval;
+            set => exposed.interval = value;
         }
 
 
@@ -48,7 +48,7 @@ namespace HotRay.Base.Nodes.Sources
             public int interval;
         }
 
-        Parameters exposedParameters, cachedParameters;
+        Parameters exposed, cached;
 
         public PulseSource() : base()
         {
@@ -59,7 +59,7 @@ namespace HotRay.Base.Nodes.Sources
 
         public PulseSource(PulseSource other) : base(other)
         {
-            exposedParameters = other.exposedParameters;
+            exposed = other.exposed;
         }
 
         
@@ -69,26 +69,26 @@ namespace HotRay.Base.Nodes.Sources
             return new PulseSource(this);
         }
 
-        public override Status OnEntry()
+        public override Task<Status> OnBigBang()
         {
-            if (Count == 0) return Status.Shutdown;
+            if (Count == 0) return Status.ShutdownTask;
             RunRoutine(GetRoutine());
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
         public override void OnCacheParameters()
         {
             base.OnCacheParameters();
-            cachedParameters = exposedParameters;
+            cached = exposed;
         }
 
-        IEnumerator<Status> GetRoutine()
+        async IAsyncEnumerator<Status> GetRoutine()
         {
-            int c = cachedParameters.count;
+            int c = cached.count;
             if (c == 0) yield return Status.Shutdown;
 
-            int it = cachedParameters.interval;
-            int fd = cachedParameters.firstDelay;
+            int it = cached.interval;
+            int fd = cached.firstDelay;
 
             while (fd-- > 0) yield return Status.WaitForNextStep;
 

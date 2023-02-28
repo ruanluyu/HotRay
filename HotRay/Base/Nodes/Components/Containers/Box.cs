@@ -1,6 +1,7 @@
 ﻿using HotRay.Base.Port;
 using HotRay.Base.Ray;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -12,7 +13,6 @@ using System.Xml.Linq;
 
 namespace HotRay.Base.Nodes.Components.Containers
 {
-    using RoutineType = IEnumerator<Status>;
 
     public class Box: ComponentBase
     {
@@ -279,7 +279,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         public struct RoutineContext
         {
             public NodeBase node;
-            public RoutineType routine;
+            public IAsyncEnumerator<Status> routine;
         }
 
 
@@ -450,7 +450,7 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        public virtual void RegisterRoutine(NodeBase node, RoutineType routine)
+        public virtual void RegisterRoutine(NodeBase node, IAsyncEnumerator<Status> routine)
         {
             lock(routineCached)
                 routineCached.AddLast(new RoutineContext()
@@ -475,24 +475,25 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        public override Status OnEntry()
+        public override async Task<Status> OnBigBang()
         {
-            foreach (var node in nodeSet)
+            await Task.WhenAll(nodeSet.Select(node => Task.Run(async () =>
             {
                 node.OnCacheParameters();
-                var status = node.OnEntry();
+                var status = await node.OnBigBang();
                 if (status.HasResult)
                 {
                     SpreadPortRays(status.PortMask ?? node.OutPorts);
                 }
-            }
+            })).ToArray());
+
             SyncOutPortReflections();
 
             TurnOnRoutineIfNeeded();
             return Status.ShutdownAndEmitWith(outPortList.Where(p => p.ChangedSinceLastCheck));
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
             SyncInPortReflections();
             SpreadPortRays(inPortInnerReflectionList.Where(p => p.ChangedSinceLastCheck));
@@ -500,7 +501,7 @@ namespace HotRay.Base.Nodes.Components.Containers
 
             TurnOnRoutineIfNeeded();
 
-            return Status.ShutdownAndEmitWith(outPortList.Where(p=>p.ChangedSinceLastCheck));
+            return Status.ShutdownAndEmitWithTask(outPortList.Where(p=>p.ChangedSinceLastCheck));
         }
 
         
@@ -518,7 +519,7 @@ namespace HotRay.Base.Nodes.Components.Containers
 
 
 
-        protected RoutineType GetBoxRoutine()
+        protected async IAsyncEnumerator<Status> GetBoxRoutine()
         {
             try
             {
@@ -550,9 +551,11 @@ namespace HotRay.Base.Nodes.Components.Containers
                         node.OnCacheParameters();
                     }
 
-                    Task[] activeTasks = NodeActiveAtThisTick.Select(node => Task.Run(() =>
+                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
+
+                    await Task.WhenAll(NodeActiveAtThisTick.Select(node => Task.Run(async () =>
                     {
-                        var status = node.OnActivated();
+                        var status = await node.OnActivated();
                         if (status.HasResult)
                         {
                             lock (portsToBeSpread)
@@ -561,9 +564,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                                         portsToBeSpread.Add(port);
                                 }
                         }
-                    }, cancelToken)).ToArray();
-                    if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
-                    Task.WaitAll(activeTasks);
+                    }, cancelToken)).ToArray());
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
                     NodeActiveAtThisTick.Clear();
 
@@ -572,16 +573,15 @@ namespace HotRay.Base.Nodes.Components.Containers
                         (routineCurrent, routineCached);
 
 
-                    Task[] routineTasks = routineCurrent.Select(rc => Task.Run(() =>
+                    await Task.WhenAll(routineCurrent.Select(rc => Task.Run(async () =>
                     {
                         var routine = rc.routine;
-                        if (routine.MoveNext())
+                        if (await routine.MoveNextAsync())
                         {
                             var status = routine.Current;
-
                             if (status.HasResult)
                             {
-                                lock(portsToBeSpread)
+                                lock (portsToBeSpread)
                                     foreach (var port in status.PortMask ?? rc.node.OutPorts)
                                         portsToBeSpread.Add(port);
                             }
@@ -594,10 +594,8 @@ namespace HotRay.Base.Nodes.Components.Containers
                         {
                             Log($"Routine from {rc.node} is terminated unexpected. Please use 'yield return Status.Shutdown' instead of 'yield break';");
                         }
-                    }, cancelToken)).ToArray();
+                    }, cancelToken)).ToArray());
                     routineCurrent.Clear();
-
-                    Task.WaitAll(routineTasks);
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
                     SpreadPortRays(portsToBeSpread);

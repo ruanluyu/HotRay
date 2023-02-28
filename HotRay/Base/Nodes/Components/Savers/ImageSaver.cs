@@ -46,7 +46,7 @@ namespace HotRay.Base.Nodes.Components.Savers
             set;get;
         }
 
-        protected override bool OnSave(ImageRGBA8888Ray ray)
+        protected override async Task<bool> OnSave(ImageRGBA8888Ray ray)
         {
             bool suc = false;
             SKBitmap bitmap = new SKBitmap(ray.Width, ray.Height);
@@ -106,7 +106,7 @@ namespace HotRay.Base.Nodes.Components.Savers
                     {
                         using (var fs = new FileStream(path, Overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write))
                         {
-                            fs.Write(data, 0, data.Length);
+                            await fs.WriteAsync(data, 0, data.Length);
                             suc = true;
                         }
                     }

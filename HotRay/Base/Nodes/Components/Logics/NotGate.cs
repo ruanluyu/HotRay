@@ -17,15 +17,15 @@ namespace HotRay.Base.Nodes.Components.Logics
             return new NotGate(this);
         }
 
-        public override Status OnEntry()
+        public override Task<Status> OnBigBang()
         {
             outPort0.Ray = SignalRay.SharedSignal;
-            return Status.ShutdownAndEmit;
+            return Status.ShutdownAndEmitTask;
         }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
-            return EmitSignalTo(outPort0, inPort0.Ray == null);
+            return EmitSignalToTask(outPort0, inPort0.Ray == null);
         }
     }
 }

@@ -9,24 +9,30 @@ namespace HotRay.Base.Nodes.Sources
 {
     public class ConstantSource<rayT> : OneRaySource<rayT> where rayT : RayBase
     {
-        public rayT? EmitValue { get => exposedParameters.emitValue; set => exposedParameters.emitValue =value; }
+        public rayT? EmitValue { get => exposed.emitValue; set => exposed.emitValue = value; }
 
         private struct Parameters
         {
-            public rayT emitValue;
+            public rayT? emitValue;
         }
 
-        Parameters exposedParameters, cachedParameters;
+        Parameters exposed, cached;
 
 
         public ConstantSource() : base()
         {
-
+            EmitValue = null;
         }
 
         public ConstantSource(ConstantSource<rayT> other) : base(other)
         {
+            exposed = other.exposed;
+        }
 
+        public override void OnCacheParameters()
+        {
+            base.OnCacheParameters();
+            cached = exposed;
         }
 
         public override NodeBase CloneNode()
@@ -35,10 +41,10 @@ namespace HotRay.Base.Nodes.Sources
         }
 
 
-        public override Status OnEntry()
+        public override async Task<Status> OnBigBang()
         {
-            base.OnEntry();
-            EmitRayTo(outPort0, cachedParameters.emitValue);
+            await base.OnBigBang();
+            EmitRayTo(outPort0, cached.emitValue);
             return Status.Shutdown;
         }
     }

@@ -18,12 +18,12 @@ namespace HotRay.Base.Nodes.Components.Utils
     public class Keeper<rayT> : TwoOneComponent<rayT, SignalRay, rayT>
         where rayT: RayBase
     {
-
+        
         public Keeper() : base() { }
         
         public Keeper(Keeper<rayT> other) : base(other) { }
 
-        public override Status OnActivated()
+        public override Task<Status> OnActivated()
         {
             if (inPort1.Ray == null)
             {
@@ -32,9 +32,9 @@ namespace HotRay.Base.Nodes.Components.Utils
             else
             {
                 // Set
-                return EmitRayTo(outPort0, inPort0.Ray);
+                return EmitRayToTask(outPort0, inPort0.Ray);
             }
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
         public override NodeBase CloneNode()

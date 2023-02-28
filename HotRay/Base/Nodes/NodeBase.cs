@@ -2,6 +2,7 @@
 using HotRay.Base.Port;
 using HotRay.Base.Ray;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -154,7 +155,7 @@ namespace HotRay.Base.Nodes
 
 
         /// <summary>
-        /// Will be called when <seealso cref="Space.RunAsync"/> is called. <br/>
+        /// Will be called when <seealso cref="Space.BigBangAsync"/> is called. <br/>
         /// This function will return in the same tick.  <br/><br/>
         /// If your node expects more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
@@ -168,9 +169,9 @@ namespace HotRay.Base.Nodes
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
         /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result, and want to emit.  <br />
         /// </returns>
-        public virtual Status OnEntry()
+        public virtual Task<Status> OnBigBang()
         {
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
         /// <summary>
@@ -198,9 +199,9 @@ namespace HotRay.Base.Nodes
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
         /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result, and want to emit.  <br />
         /// </returns>
-        public virtual Status OnActivated()
+        public virtual Task<Status> OnActivated()
         {
-            return Status.Shutdown;
+            return Status.ShutdownTask;
         }
 
 
@@ -219,7 +220,7 @@ namespace HotRay.Base.Nodes
         /// 6. <seealso cref="Status.WaitForNextStepAndEmitWith"/> <br /><br />
         /// Quick start reference: <seealso cref="Sources.PulseSource.GetRoutine"/><br />
         /// </param>
-        protected void RunRoutine(IEnumerator<Status> routine)
+        protected void RunRoutine(IAsyncEnumerator<Status> routine)
         {
             Box.GetParentBoxOf(this)?.RegisterRoutine(this, routine);
         }
@@ -253,6 +254,9 @@ namespace HotRay.Base.Nodes
             return Status.Shutdown;
         }
 
+        protected static Task<Status> EmitSignalToTask(OutPort<SignalRay> outport, bool isHigh)
+            => Task.FromResult(EmitSignalTo(outport,isHigh));
+
         protected static Status EmitRayTo(OutPort outport, RayBase? ray)
         {
             if (outport.Ray != ray)
@@ -263,11 +267,13 @@ namespace HotRay.Base.Nodes
             return Status.Shutdown;
         }
 
+        protected static Task<Status> EmitRayToTask(OutPort outport, RayBase? ray)
+            => Task.FromResult(EmitRayTo(outport, ray));
 
 
 
 
-        
+
 
 
 
