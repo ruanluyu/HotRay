@@ -155,7 +155,7 @@ namespace HotRay.Base.Nodes
 
 
         /// <summary>
-        /// Will be called when <seealso cref="Space.BigBangAsync"/> is called. <br/>
+        /// Will be called when <seealso cref="Space.StartAndRunAsync"/> is called. <br/>
         /// This function will return in the same tick.  <br/><br/>
         /// If your node expects more than one tick: <br/>
         /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
@@ -169,19 +169,37 @@ namespace HotRay.Base.Nodes
         /// 2. <seealso cref="Status.ShutdownAndEmit"/>: Has result <br />
         /// 3. <seealso cref="Status.ShutdownAndEmitWith"/>: Has result, and want to emit.  <br />
         /// </returns>
-        public virtual Task<Status> OnBigBang()
+        public virtual Task<Status> OnStart()
         {
             return Status.ShutdownTask;
         }
+
+        public virtual Task OnPause()
+        {
+            return Task.CompletedTask;
+        }
+
+        public virtual Task OnUnpause()
+        {
+            return Task.CompletedTask;
+        }
+
+
+        public virtual Task OnStop()
+        {
+            return Task.CompletedTask;
+        }
+
+
 
         /// <summary>
         /// This function will be called before <seealso cref="OnActivated"/>. <br/>
         /// Cache parameters in this callback and NERVER do anything else here. 
         /// </summary>
-        public virtual void OnCacheParameters()
+        /*public virtual void OnCacheParameters()
         {
 
-        }
+        }*/
 
         /// <summary>
         /// Will be called if any of the inports recieved rays. <br/>

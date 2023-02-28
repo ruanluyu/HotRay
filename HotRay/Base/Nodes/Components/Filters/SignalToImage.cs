@@ -68,7 +68,7 @@ namespace HotRay.Base.Nodes.Components.Filters
                 {
                     try
                     {
-                        var localimage = SKBitmap.Decode(ImagePath);
+                        var localimage = await Task.Run(()=> SKBitmap.Decode(ImagePath));
                         bitmap = localimage;
                     }
                     catch (Exception e)

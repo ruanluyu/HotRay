@@ -15,8 +15,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int FirstDelay
         {
-            get=>exposed.firstDelay; 
-            set=>exposed.firstDelay = value;
+            get=>p.firstDelay; 
+            set=>p.firstDelay = value;
         }
 
         /// <summary>
@@ -26,8 +26,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Count
         {
-            get => exposed.count;
-            set => exposed.count = value;
+            get => p.count;
+            set => p.count = value;
         }
 
         /// <summary>
@@ -36,8 +36,8 @@ namespace HotRay.Base.Nodes.Sources
         /// </summary>
         public int Interval
         {
-            get => exposed.interval;
-            set => exposed.interval = value;
+            get => p.interval;
+            set => p.interval = value;
         }
 
 
@@ -48,7 +48,7 @@ namespace HotRay.Base.Nodes.Sources
             public int interval;
         }
 
-        Parameters exposed, cached;
+        Parameters p;
 
         public PulseSource() : base()
         {
@@ -59,7 +59,7 @@ namespace HotRay.Base.Nodes.Sources
 
         public PulseSource(PulseSource other) : base(other)
         {
-            exposed = other.exposed;
+            p = other.p;
         }
 
         
@@ -69,26 +69,26 @@ namespace HotRay.Base.Nodes.Sources
             return new PulseSource(this);
         }
 
-        public override Task<Status> OnBigBang()
+        public override Task<Status> OnStart()
         {
             if (Count == 0) return Status.ShutdownTask;
             RunRoutine(GetRoutine());
             return Status.ShutdownTask;
         }
 
-        public override void OnCacheParameters()
+        /*public override void OnCacheParameters()
         {
             base.OnCacheParameters();
             cached = exposed;
-        }
+        }*/
 
         async IAsyncEnumerator<Status> GetRoutine()
         {
-            int c = cached.count;
+            int c = p.count;
             if (c == 0) yield return Status.Shutdown;
 
-            int it = cached.interval;
-            int fd = cached.firstDelay;
+            int it = p.interval;
+            int fd = p.firstDelay;
 
             while (fd-- > 0) yield return Status.WaitForNextStep;
 

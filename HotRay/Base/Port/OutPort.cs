@@ -92,7 +92,7 @@ namespace HotRay.Base.Port
         {
             if (TargetPort != null)
             {
-                Log($"==[[{Ray?.ToString() ?? "null"}]]==> {TargetPort.Parent}");
+                // Log($"==[[{Ray?.ToString() ?? "null"}]]==> {TargetPort.Parent}");
                 TargetPort.Ray = Ray;
             }
         }

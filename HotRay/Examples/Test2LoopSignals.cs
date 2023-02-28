@@ -46,9 +46,9 @@ namespace HotRay.Examples
             intfilter.OutPorts[0].ConnectTo(print.InPorts[0]);
 
 
-
+            Console.WriteLine(space.LayoutToString());
             
-            var task = space.BigBangAsync();
+            var task = space.StartAndRunAsync();
 
             task.Wait();
 

@@ -17,7 +17,7 @@ namespace HotRay.Base.Nodes.Components.Logics
             return new NotGate(this);
         }
 
-        public override Task<Status> OnBigBang()
+        public override Task<Status> OnStart()
         {
             outPort0.Ray = SignalRay.SharedSignal;
             return Status.ShutdownAndEmitTask;

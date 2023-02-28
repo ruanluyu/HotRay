@@ -34,6 +34,7 @@ namespace HotRay.Base.Port
                 needConversion = false;
                 if (value == null)
                 {
+                    sourcePort = null;
                     return;
                 }
                 var sourceType = value.RayType;

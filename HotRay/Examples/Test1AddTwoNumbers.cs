@@ -47,7 +47,7 @@ namespace HotRay.Examples
             adder.OutPorts[0].ConnectTo(print.InPorts[0]);
 
             
-            var task = space.BigBangAsync();
+            var task = space.StartAndRunAsync();
             task.Wait();
         }
     }

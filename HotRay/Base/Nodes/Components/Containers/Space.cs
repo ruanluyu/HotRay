@@ -13,8 +13,6 @@ namespace HotRay.Base.Nodes.Components.Containers
     public class Space:Box
     {
 
-
-
         public Space():base() 
         {
             TicksPerSecond = 10;
@@ -33,6 +31,10 @@ namespace HotRay.Base.Nodes.Components.Containers
             return new Space(this);
         }
 
+        /// <summary>
+        /// >0: Finite ticks per second. <br/>
+        /// otherwise: Full speed running. 
+        /// </summary>
         public int TicksPerSecond
         {
             get;set;
@@ -64,11 +66,11 @@ namespace HotRay.Base.Nodes.Components.Containers
         /// <summary>
         /// Start running space. <br/>
         /// See <see cref="PauseAsync"/> if you want to pause the space. <br/>
-        /// See <see cref="ContinueAsync"/> if you want to continue a paused space. <br/>
-        /// See <see cref="CollapseAsync(float)"/> if you want to stop the space. 
+        /// See <see cref="UnpauseAsync"/> if you want to continue a paused space. <br/>
+        /// See <see cref="StopAsync(float)"/> if you want to stop the space. 
         /// </summary>
         /// <returns></returns>
-        public Task BigBangAsync()
+        public Task StartAndRunAsync()
         {
             if (Running)
             {
@@ -92,7 +94,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 {
                     var timeoutTicks = 3.0f;
                     Log($"Detected cancel event {arg.SpecialKey}. Trying cancel task in {timeoutTicks:F2} [ticks]...");
-                    var task = Task.Run(() => CollapseAsync(timeoutTicks));
+                    var task = Task.Run(() => StopAsync(timeoutTicks));
                     if(task.IsFaulted)
                     {
                         throw task.Exception ?? new Exception("Unknown");
@@ -122,12 +124,13 @@ namespace HotRay.Base.Nodes.Components.Containers
             pauseRequest = true;
             while(!paused)
             {
-                await Task.Delay(1000);
+                await Task.Delay(100);
             }
+            await OnPause();
             Log("Paused sapce. ");
         }
 
-        public async Task ContinueAsync()
+        public async Task UnpauseAsync()
         {
             if (runTask == null)
             {
@@ -135,26 +138,29 @@ namespace HotRay.Base.Nodes.Components.Containers
                 return;
             }
             if (Running) return;
+            await OnUnpause();
             pauseRequest = false;
-            while(paused)
+            while (paused)
             {
-                await Task.Delay(1000);
+                await Task.Delay(100);
             }
             Log("Continued space.");
         }
 
-        public async Task CollapseAsync(float timeoutTicks = 3)
+        public async Task StopAsync(float timeoutTicks = 3)
         {
             if (cancellationSource == null) return;
             if (runTask == null) return;
             try
             {
-                if (paused) await ContinueAsync();
+                if (!paused)
+                {
+                    await PauseAsync();
+                }
+                await OnStop();
 
                 cancellationSource.Cancel();
-                var timeout = timeoutTicks / TicksPerSecond;
-
-                cancellationSource.Cancel();
+                var timeout = TicksPerSecond <= 0 ? 3 : timeoutTicks / TicksPerSecond;
                 await runTask.WaitAsync(TimeSpan.FromSeconds(timeout));
                 if (runTask.IsCompleted)
                 {
@@ -162,7 +168,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                 }
                 else
                 {
-                    Log($"Failed to cancel task in {timeoutTicks} [ticks]. ");
+                    Log($"Failed to cancel task in {timeout} [sec]. ");
                 }
             }
             finally
@@ -182,15 +188,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         public bool pauseRequest = false;
         public bool paused = false;
 
-        async Task CheckPause()
-        {
-            while(pauseRequest)
-            {
-                paused = true;
-                await Task.Delay(1000);
-            }
-            paused = false;
-        }
+        
 
         async Task TaskCore()
         {
@@ -213,7 +211,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                         {
                             if(PrintTickInfo)
                                 Log($"Cancelled at tick: {tick, 7}");
-                            break;
+                            goto END;
                         }
                         if (PrintTickInfo)  Log($"Tick {tick,7}");
                         if (await routine.MoveNextAsync())
@@ -229,7 +227,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                             {
                                 Log($"Tick {tick,7} done. Terminate signal detected. \n");
                             }
-                            break;
+                            goto END;
                         }
                     }
                     catch (Exception e)
@@ -241,21 +239,29 @@ namespace HotRay.Base.Nodes.Components.Containers
                     {
                         if(PrintTickInfo) 
                             Log($"Reached max tick {MaxTick}. Terminating... \n");
-                        break;
+                        goto END;
                     }
 
                     ++tick;
 
-                    await CheckPause();
-
-                    double waitTime = (tick * 1000 / tps) 
-                        - ((int)(Environment.TickCount64- startMs));
+                    double waitTime = tps <= 0 ? 0 :((tick * 1000 / tps) 
+                        - ((int)(Environment.TickCount64- startMs)));
 
                     if (waitTime > 0) 
                         await Task.Delay((int)waitTime);
 
-                    await CheckPause();
+                    while (pauseRequest)
+                    {
+                        paused = true;
+                        if(cancellationToken.IsCancellationRequested)
+                        {
+                            goto END;
+                        }
+                        await Task.Delay(1000);
+                    }
+                    paused = false;
                 }
+            END:;
             }
             catch (Exception e)
             {
@@ -269,7 +275,7 @@ namespace HotRay.Base.Nodes.Components.Containers
         async IAsyncEnumerator<object?> GetSpaceRoutine()
         {
             Log("Big banging...");
-            await OnBigBang();
+            await OnStart();
             Log("Big bang done. ");
             yield return null;
 

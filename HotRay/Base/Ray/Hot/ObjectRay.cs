@@ -50,6 +50,7 @@ namespace HotRay.Base.Ray.Hot
                         dp.Dispose();
                     }
                 }
+                Data = null;
                 disposedValue = true;
             }
             base.Dispose(disposing);

@@ -475,23 +475,41 @@ namespace HotRay.Base.Nodes.Components.Containers
             }
         }
 
-        public override async Task<Status> OnBigBang()
+        public override async Task<Status> OnStart()
         {
-            await Task.WhenAll(nodeSet.Select(node => Task.Run(async () =>
+            await Task.WhenAll(nodeSet.Select(async (node) =>
             {
-                node.OnCacheParameters();
-                var status = await node.OnBigBang();
+                var status = await node.OnStart();
                 if (status.HasResult)
                 {
                     SpreadPortRays(status.PortMask ?? node.OutPorts);
                 }
-            })).ToArray());
+            }).ToArray());
 
             SyncOutPortReflections();
 
             TurnOnRoutineIfNeeded();
             return Status.ShutdownAndEmitWith(outPortList.Where(p => p.ChangedSinceLastCheck));
         }
+
+        public override async Task OnPause()
+        {
+            await base.OnPause();
+            await Task.WhenAll(nodeSet.Select(node => node.OnPause()).ToArray());
+        }
+
+        public override async Task OnUnpause()
+        {
+            await base.OnUnpause();
+            await Task.WhenAll(nodeSet.Select(node => node.OnUnpause()).ToArray());
+        }
+
+        public override async Task OnStop()
+        {
+            await base.OnStop();
+            await Task.WhenAll(nodeSet.Select(node => node.OnStop()).ToArray());
+        }
+
 
         public override Task<Status> OnActivated()
         {
@@ -546,14 +564,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                         yield return Status.Shutdown;
                     }
 
-                    foreach (var node in NodeActiveAtThisTick)
-                    {
-                        node.OnCacheParameters();
-                    }
 
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
-                    await Task.WhenAll(NodeActiveAtThisTick.Select(node => Task.Run(async () =>
+                    await Task.WhenAll(NodeActiveAtThisTick.Select(async node =>
                     {
                         var status = await node.OnActivated();
                         if (status.HasResult)
@@ -561,10 +575,10 @@ namespace HotRay.Base.Nodes.Components.Containers
                             lock (portsToBeSpread)
                                 foreach (var port in status.PortMask ?? node.OutPorts)
                                 {
-                                        portsToBeSpread.Add(port);
+                                    portsToBeSpread.Add(port);
                                 }
                         }
-                    }, cancelToken)).ToArray());
+                    }).ToArray());
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
                     NodeActiveAtThisTick.Clear();
 
@@ -573,7 +587,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                         (routineCurrent, routineCached);
 
 
-                    await Task.WhenAll(routineCurrent.Select(rc => Task.Run(async () =>
+                    await Task.WhenAll(routineCurrent.Select(async rc =>
                     {
                         var routine = rc.routine;
                         if (await routine.MoveNextAsync())
@@ -594,7 +608,7 @@ namespace HotRay.Base.Nodes.Components.Containers
                         {
                             Log($"Routine from {rc.node} is terminated unexpected. Please use 'yield return Status.Shutdown' instead of 'yield break';");
                         }
-                    }, cancelToken)).ToArray());
+                    }).ToArray());
                     routineCurrent.Clear();
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 

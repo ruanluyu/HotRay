@@ -47,7 +47,7 @@ namespace HotRay.Examples
             
 
             
-            var task = space.BigBangAsync();
+            var task = space.StartAndRunAsync();
             task.Wait();
 
         }

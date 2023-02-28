@@ -17,7 +17,7 @@ namespace HotRay.Base.Nodes.Components.Utils
             public string? format;
         }
 
-        Parameters exposed, cached;
+        Parameters p;
 
         public Print() : base() 
         {
@@ -26,18 +26,18 @@ namespace HotRay.Base.Nodes.Components.Utils
         }
         public Print(Print<rayT> other) : base(other) 
         {
-            exposed = other.exposed;
+            p = other.p;
         }
 
-        public override void OnCacheParameters()
+        /*public override void OnCacheParameters()
         {
             base.OnCacheParameters();
             cached = exposed;
-        }
+        }*/
 
         public bool Newline
         {
-            get=>exposed.newline; set=>exposed.newline = value;
+            get=>p.newline; set=>p.newline = value;
         }
 
         /// <summary>
@@ -48,7 +48,7 @@ namespace HotRay.Base.Nodes.Components.Utils
         /// </summary>
         public string? Format
         {
-            get => exposed.format; set => exposed.format = value;
+            get => p.format; set => p.format = value;
         }
 
         public override NodeBase CloneNode()
@@ -61,8 +61,8 @@ namespace HotRay.Base.Nodes.Components.Utils
             if (inPort0.Ray is rayT objRay)
             {
                 string info = objRay.ToString() ?? "null";
-                if (cached.format != null) string.Format(cached.format, info);
-                if (cached.newline) Console.WriteLine(info);
+                if (p.format != null) string.Format(p.format, info);
+                if (p.newline) Console.WriteLine(info);
                 else Console.Write(info);
             }
             return Status.ShutdownTask;
