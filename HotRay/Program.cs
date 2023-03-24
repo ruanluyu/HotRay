@@ -9,10 +9,9 @@ namespace HotRay
         static void Main(string[] args)
         {
             // Test1AddTwoNumbers.Run();
-            Test2LoopSignals.Run();
+            // Test2LoopSignals.Run();
             // Test3BoxAndClone.Run();
-            // Test4LoadImage.Run();
-            // Test5HttpServer.Run();
+            Test4HttpServer.Run();
 
         }
 

@@ -289,8 +289,49 @@ namespace HotRay.Base.Nodes
             => Task.FromResult(EmitRayTo(outport, ray));
 
 
-
-
+        /// <summary>
+        /// This function wraps a routine to a skippable routine. <br/><br/>
+        /// A skippable routine is a routine that skips ticks when busy. <br/>
+        /// e.g. When a routine is working with networking, the parent Box will be blocked until the networking task is done. 
+        /// While it is wrapped as a "SkipIfBusyRoutine", the parent Box skips current tick and will try to get result in the next tick. <br/>
+        /// See: <see cref="Sources.HttpContextSource.OnStart"/>
+        /// </summary>
+        /// <param name="routine"></param>
+        /// <returns></returns>
+        protected async IAsyncEnumerator<Status> AsSkipIfBusyRoutine(IAsyncEnumerator<Status>? routine)
+        {
+            if(routine == null)
+            {
+                yield return Status.Shutdown;
+            }
+            else
+            {
+                while (true)
+                {
+                    var task = routine.MoveNextAsync();
+                    while (true)
+                    {
+                        if (task.IsCompleted)
+                        {
+                            if (task.Result)
+                            {
+                                yield return routine.Current;
+                                break;
+                            }
+                            else
+                            {
+                                Log("Warnning: Use 'yield return Status.Shutdown' to close the routine instead of 'yield break'. ");
+                                yield return Status.Shutdown;
+                            }
+                        }
+                        else
+                        {
+                            yield return Status.WaitForNextStep;
+                        }
+                    }
+                }
+            }
+        }
 
 
 

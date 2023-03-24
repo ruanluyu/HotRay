@@ -14,7 +14,7 @@ using HotRay.Base.Ray.Hot;
 
 namespace HotRay.Examples
 {
-    internal static class Test5HttpServer
+    internal static class Test4HttpServer
     {
         public static void Run()
         {

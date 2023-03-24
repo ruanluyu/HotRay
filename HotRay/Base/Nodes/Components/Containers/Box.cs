@@ -16,15 +16,9 @@ namespace HotRay.Base.Nodes.Components.Containers
 
     public class Box: ComponentBase
     {
-        /// <summary>
-        /// -1: unlimited, >=0 limited. default: -1 
-        /// </summary>
-        public int MaxNodePerTick { get; set; }
 
         public string? Description { get; set; }
 
-        
-        
 
         
         public static Box? GetParentBoxOf(InPort port)
@@ -55,7 +49,6 @@ namespace HotRay.Base.Nodes.Components.Containers
         public IReadOnlyList<InPort> OutPortInnerReflections => outPortInnerReflectionList;
 
         public Box() : base() { 
-            MaxNodePerTick = -1;
             Description = null;
             inPortInnerReflectionList = SharedEmptyOutPorts;
             outPortInnerReflectionList = SharedEmptyInPorts;
@@ -67,7 +60,6 @@ namespace HotRay.Base.Nodes.Components.Containers
                 b.nodeSet.Add(this);
             }
 
-            MaxNodePerTick = other.MaxNodePerTick;
 
             Description = other.Description;
 

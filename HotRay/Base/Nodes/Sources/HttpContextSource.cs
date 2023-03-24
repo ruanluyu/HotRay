@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace HotRay.Base.Nodes.Sources
 {
-    public class HttpContextSource : MTSTSourceBase
+    public class HttpContextSource : SourceBase
     {
         private struct Parameters
         {
@@ -51,23 +51,31 @@ namespace HotRay.Base.Nodes.Sources
             return new HttpContextSource(this);
         }
 
-        public override async IAsyncEnumerator<Status> OnBigBangTask()
+        public override async Task<Status> OnStart()
+        {
+            await base.OnStart();
+            RunRoutine(AsSkipIfBusyRoutine(GetRoutine()));
+            return Status.Shutdown;
+        }
+
+
+        async IAsyncEnumerator<Status> GetRoutine()
         {
             if (!HttpListener.IsSupported)
             {
-                Log("Windows XP SP2 or Server 2003 is required to use the HttpListener class.");
+                Log("HttpListener is not supported on this platform. ");
                 yield return Status.Shutdown;
             }
-            
 
-            // Create a listener.
+
             using HttpListener listener = new HttpListener();
-            // Add the prefixes.
-            // URI prefixes are required,
+
             listener.Prefixes.Add(URIPrefix);
             listener.Start();
-            Log("Listening...");
-            while(true)
+
+            // Log("Listening...");
+
+            while (true)
             {
                 HttpListenerContext context = await listener.GetContextAsync();
 
