@@ -15,6 +15,7 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
             public bool newline;
             public string? format;
+            public string? template;
         }
 
         Parameters p;
@@ -23,6 +24,7 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
             Newline = true;
             Format = null;
+            
         }
         public Print(Print<rayT> other) : base(other) 
         {
@@ -41,14 +43,21 @@ namespace HotRay.Base.Nodes.Components.Utils
         }
 
         /// <summary>
-        /// This option will be treated as an <seealso cref="IFormatProvider"/> to format a string. <br/>
-        /// e.g. To add "The cat said: " in front of any message. 
-        /// Set this to "The cat said: {0}" <br/>
-        /// See also: <seealso cref="string.Format(IFormatProvider?, string, object?)"/>
+        /// Used to format a ray to a string <br/>
+        /// e.g. "F6", "-5,F2"
         /// </summary>
         public string? Format
         {
             get => p.format; set => p.format = value;
+        }
+
+        /// <summary>
+        /// Used to insert formatted-string to a line. <br/>
+        /// e.g. "PrintNode1 said: {0}"
+        /// </summary>
+        public string? Template
+        {
+            get => p.template; set => p.template = value;
         }
 
         public override NodeBase CloneNode()
@@ -60,8 +69,10 @@ namespace HotRay.Base.Nodes.Components.Utils
         {
             if (inPort0.Ray is rayT objRay)
             {
-                string info = objRay.ToString() ?? "null";
-                if (p.format != null) string.Format(p.format, info);
+                string info = p.format == null ? (objRay.ToString() ?? "null") : (objRay.ToString(p.format) ?? "null");
+                
+                if (p.template != null) info = string.Format(p.template, info);
+
                 if (p.newline) Console.WriteLine(info);
                 else Console.Write(info);
             }

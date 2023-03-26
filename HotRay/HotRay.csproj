@@ -12,9 +12,4 @@
     <None Remove="Base\RayBase.cs~RF39946264.TMP" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen" Version="5.1.1" />
-    <PackageReference Include="SkiaSharp" Version="2.88.3" />
-  </ItemGroup>
-
 </Project>

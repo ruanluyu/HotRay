@@ -22,7 +22,6 @@ namespace HotRay.Examples
             {
                 TicksPerSecond = 10,
                 PrintTickInfo = false,
-                MaxNodePerTick = -1
             };
             space.LogEvent += s => Console.WriteLine(s);
 

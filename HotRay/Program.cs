@@ -11,7 +11,8 @@ namespace HotRay
             // Test1AddTwoNumbers.Run();
             // Test2LoopSignals.Run();
             // Test3BoxAndClone.Run();
-            Test4HttpServer.Run();
+            // Test4HttpServer.Run();
+            Test5SequencerAndAccumulater.Run();
 
         }
 

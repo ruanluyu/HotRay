@@ -19,6 +19,15 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public string? Description { get; set; }
 
+        /// <summary>
+        /// How many ticks of this box per tick of parent box. <br/>
+        /// 1 by default. 
+        /// </summary>
+        public int TicksPerTick 
+        { 
+            get;
+            set;
+        }
 
         
         public static Box? GetParentBoxOf(InPort port)
@@ -50,6 +59,7 @@ namespace HotRay.Base.Nodes.Components.Containers
 
         public Box() : base() { 
             Description = null;
+            TicksPerTick = 1;
             inPortInnerReflectionList = SharedEmptyOutPorts;
             outPortInnerReflectionList = SharedEmptyInPorts;
         }
@@ -62,6 +72,7 @@ namespace HotRay.Base.Nodes.Components.Containers
 
 
             Description = other.Description;
+            TicksPerTick = other.TicksPerTick;
 
             inPortList = other.inPortList.Select(p => {
                 var cp = (p.ClonePort() as InPort)!;
@@ -528,15 +539,62 @@ namespace HotRay.Base.Nodes.Components.Containers
         }
 
 
-
         protected async IAsyncEnumerator<Status> GetBoxRoutine()
+        {
+            var routine = GetBoxInnerRoutine();
+            while(true)
+            {
+                int counter = TicksPerTick;
+                Status status = new Status();
+                bool spreadAll = false;
+                if(counter <= 0)
+                {
+                    yield return Status.Shutdown;
+                    yield break;
+                }
+                while (await routine.MoveNextAsync())
+                {
+                    var subStatus = routine.Current;
+                    if(!spreadAll && subStatus.HasResult)
+                    {
+                        if(subStatus.PortMask == null)
+                        {
+                            spreadAll = true;
+                        }
+                        else
+                        {
+                            if(status.PortMask == null)
+                            {
+                                status.PortMask = subStatus.PortMask;
+                            }
+                            else
+                            {
+                                status.PortMask = status.PortMask.Concat(subStatus.PortMask);
+                            }
+                        }
+                    }
+                    if(subStatus.Finished)
+                    {
+                        status.Finished = true;
+                        break;
+                    }
+                    counter--;
+                    if (counter == 0) break;
+                }
+                yield return status;
+            }
+        }
+
+
+        protected async IAsyncEnumerator<Status> GetBoxInnerRoutine()
         {
             try
             {
-                var maxNode = MaxNodePerTick;
+                
                 var portsToBeSpread = new HashSet<OutPort>();
                 var currentSpace = GetCurrentSpace()!;
                 var cancelToken = currentSpace.cancellationToken;
+
 
                 if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;
 
@@ -550,11 +608,11 @@ namespace HotRay.Base.Nodes.Components.Containers
 
                     
 
-                    if ((maxNode >= 0) && ((NodeActiveAtThisTick.Count + routineCurrent.Count)>= maxNode))
+                    /*if ((maxNode >= 0) && ((NodeActiveAtThisTick.Count + routineCurrent.Count)>= maxNode))
                     {
                         Log($"Exceeded {nameof(MaxNodePerTick)} limitation: {MaxNodePerTick}. ");
                         yield return Status.Shutdown;
-                    }
+                    }*/
 
 
                     if (cancelToken.IsCancellationRequested) yield return Status.Shutdown;

@@ -17,6 +17,12 @@ namespace HotRay.Base.Ray
         {
             return new StringRay(this);
         }
-
+        public override string ToString()
+        {
+            var d = Data;
+            if (d == null) return "null string";
+            if (d == "") return "empty string";
+            return d;
+        }
     }
 }

@@ -27,6 +27,14 @@ namespace HotRay.Base.Nodes.Components.Utils
             p = other.p;
         }
 
+        /// <summary>
+        /// Disable cross-tick-async feature. 
+        /// </summary>
+        public override bool EnableCrossTickAsync { 
+            get => false; 
+            set { }
+        }
+
 
         public virtual int Delay
         {

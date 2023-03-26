@@ -54,7 +54,7 @@ namespace HotRay.Base.Nodes.Sources
         public override async Task<Status> OnStart()
         {
             await base.OnStart();
-            RunRoutine(AsSkipIfBusyRoutine(GetRoutine()));
+            RunRoutine(AsCrossTickAsyncRoutine(GetRoutine()));
             return Status.Shutdown;
         }
 

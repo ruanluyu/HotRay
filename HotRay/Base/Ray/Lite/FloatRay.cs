@@ -37,5 +37,9 @@ namespace HotRay.Base.Ray.Lite
         {
             return Data.ToString();
         }
+        public override string? ToString(string? format)
+        {
+            return Data.ToString(format);
+        }
     }
 }

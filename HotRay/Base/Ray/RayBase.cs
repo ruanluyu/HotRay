@@ -70,6 +70,11 @@ namespace HotRay.Base.Ray
                 .Invoke(new object[] { this }) as RayBase;
         }
 
+        public virtual string? ToString(string? format)
+        {
+            return ToString();
+        }
+
     }
 
 

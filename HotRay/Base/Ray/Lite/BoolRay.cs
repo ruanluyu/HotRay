@@ -38,6 +38,5 @@ namespace HotRay.Base.Ray.Lite
         {
             return Data.ToString();
         }
-
     }
 }

@@ -15,9 +15,10 @@ namespace HotRay.Base.Nodes
     public abstract class NodeBase: BaseObject, IDisposable
     {
         
-
         protected static readonly InPort[] SharedEmptyInPorts = new InPort[0];
         protected static readonly OutPort[] SharedEmptyOutPorts = new OutPort[0];
+
+        public virtual bool EnableCrossTickAsync { get; set; }
 
         protected InPort CreateInPortWithType(Type rayType)
         {
@@ -63,10 +64,12 @@ namespace HotRay.Base.Nodes
 
         public NodeBase() : base()
         {
+            EnableCrossTickAsync = false;
         }
 
         public NodeBase(NodeBase other): base(other)
         {
+            EnableCrossTickAsync = other.EnableCrossTickAsync;
         }
 
 
@@ -158,7 +161,7 @@ namespace HotRay.Base.Nodes
         /// Will be called when <seealso cref="Space.StartAndRunAsync"/> is called. <br/>
         /// This function will return in the same tick.  <br/><br/>
         /// If your node expects more than one tick: <br/>
-        /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
+        /// Call <seealso cref="RunRoutine(IAsyncEnumerator{Status})"/> in this function. <br/>
         /// See also: <seealso cref="Base.Nodes.Sources.PulseSource"/>. 
         /// </summary>
         /// <param name="inport"></param>
@@ -206,7 +209,7 @@ namespace HotRay.Base.Nodes
         /// This function will be called after 1 tick the first time any in-ports' ray changed.  <br/>
         /// This function is called only one time in the same tick. <br/>
         /// If the node has lifetime more than one tick: <br/>
-        /// Call <seealso cref="RunRoutine(IEnumerator{Status})"/> in this function. <br/>
+        /// Call <seealso cref="RunRoutine(IAsyncEnumerator{Status})"/> in this function. <br/>
         /// See also: <seealso cref="Base.Nodes.Components.Utils.Delayer{rayT}"/>
         /// </summary>
         /// <param name="inport">The inport that holds new ray data. </param>
@@ -240,7 +243,7 @@ namespace HotRay.Base.Nodes
         /// </param>
         protected void RunRoutine(IAsyncEnumerator<Status> routine)
         {
-            Box.GetParentBoxOf(this)?.RegisterRoutine(this, routine);
+            Box.GetParentBoxOf(this)?.RegisterRoutine(this, EnableCrossTickAsync ? AsCrossTickAsyncRoutine(routine) : routine);
         }
 
 
@@ -275,14 +278,16 @@ namespace HotRay.Base.Nodes
         protected static Task<Status> EmitSignalToTask(OutPort<SignalRay> outport, bool isHigh)
             => Task.FromResult(EmitSignalTo(outport,isHigh));
 
-        protected static Status EmitRayTo(OutPort outport, RayBase? ray)
+        protected static Status EmitRayTo(OutPort outport, RayBase? ray, bool continueRunning = false)
         {
             if (outport.Ray != ray)
             {
                 outport.Ray = ray;
-                return Status.ShutdownAndEmitWith(outport);
+                if(continueRunning) return Status.WaitForNextStepAndEmitWith(outport);
+                else return Status.ShutdownAndEmitWith(outport);
             }
-            return Status.Shutdown;
+            if (continueRunning) return Status.WaitForNextStep;
+            else return Status.Shutdown;
         }
 
         protected static Task<Status> EmitRayToTask(OutPort outport, RayBase? ray)
@@ -298,7 +303,7 @@ namespace HotRay.Base.Nodes
         /// </summary>
         /// <param name="routine"></param>
         /// <returns></returns>
-        protected async IAsyncEnumerator<Status> AsSkipIfBusyRoutine(IAsyncEnumerator<Status>? routine)
+        protected async IAsyncEnumerator<Status> AsCrossTickAsyncRoutine(IAsyncEnumerator<Status>? routine)
         {
             if(routine == null)
             {
@@ -321,6 +326,7 @@ namespace HotRay.Base.Nodes
                             else
                             {
                                 Log("Warnning: Use 'yield return Status.Shutdown' to close the routine instead of 'yield break'. ");
+                                await Task.CompletedTask; // Just to disable async warning
                                 yield return Status.Shutdown;
                             }
                         }
